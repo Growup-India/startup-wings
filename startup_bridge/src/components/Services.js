@@ -159,7 +159,7 @@ export default function Services({ onLogin, user, onLogout }) {
                   className="navbar-logo"
                 />
               </div>
-              <span className="logo-text">Startup Wings</span>
+              <span className="logo-text">Startup Wing</span>
             </div>
             
             <div className="nav-links desktop-nav">
@@ -324,7 +324,7 @@ export default function Services({ onLogin, user, onLogout }) {
                        style={{ width: '40px', height: '40px', objectFit: 'contain' }}
                      />
                    </div>
-                   <span className="logo-text" style={{ color: '#ffffff' }}>Startup Wings</span>
+                   <span className="logo-text" style={{ color: '#ffffff' }}>Startup Wing</span>
                  </div>
                  
                  <div className="footer-links">
