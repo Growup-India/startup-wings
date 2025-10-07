@@ -66,7 +66,7 @@ const About = ({ onLogin, user, onLogout }) => {
                   className="navbar-logo"
                 />
               </div>
-              <span className="logo-text">Startup Wings</span>
+              <span className="logo-text">Startup Wing</span>
             </div>
             
             <div className="nav-links desktop-nav">
@@ -155,7 +155,7 @@ const About = ({ onLogin, user, onLogout }) => {
         <div className="container">
           <h2 className="section-title">About Us</h2>
           <p className="about-text">
-          At Startup Bridge, we believe that every great idea deserves the right launchpad. Too many founders waste time, money, and energy on trial-and-error. That's why we built a guided platform that takes the guesswork out of building a startup.
+          At Startup wing, we believe that every great idea deserves the right launchpad. Too many founders waste time, money, and energy on trial-and-error. That's why we built a guided platform that takes the guesswork out of building a startup.
 
           We help early-stage entrepreneurs validate ideas, research markets, register legally, build online presence, design marketing strategies, and connect with grants, mentors, and investors—all in one place.
 
@@ -167,7 +167,7 @@ const About = ({ onLogin, user, onLogout }) => {
           <div className="about-extended">
             <h3 className="subsection-title">Our Story</h3>
             <p className="about-description">
-            Founded by entrepreneurs who've been through the startup journey themselves, Startup Bridge was born from frustration with the scattered, confusing advice available to first-time founders.
+            Founded by entrepreneurs who've been through the startup journey themselves, Startup wing was born from frustration with the scattered, confusing advice available to first-time founders.
              We've distilled years of experience, countless mistakes, and hard-won insights into a clear, actionable platform.
 
             </p>
@@ -182,7 +182,7 @@ const About = ({ onLogin, user, onLogout }) => {
 
               A supportive ecosystem that saves time and reduces risk
 
-              Whether you're at the idea stage or preparing to scale, Startup Bridge is your trusted partner on the journey from vision to reality.
+              Whether you're at the idea stage or preparing to scale, Startup wing is your trusted partner on the journey from vision to reality.
 
             </p>
             
@@ -196,7 +196,7 @@ const About = ({ onLogin, user, onLogout }) => {
           </div>
             <h3 className="subsection-title">Our Mision</h3>
             <p className="about-description">
-              At Startup Bridge, we empower founders to launch smarter, faster, and more affordably.
+              At Startup wing, we empower founders to launch smarter, faster, and more affordably.
               By providing step-by-step guidance, resources, and connections, we help entrepreneurs transform ideas into successful businesses with confidence.
               </p>
 
@@ -220,7 +220,7 @@ const About = ({ onLogin, user, onLogout }) => {
                         style={{ width: '40px', height: '40px', objectFit: 'contain' }}
                       />
                     </div>
-                    <span className="logo-text" style={{ color: '#ffffff' }}>Startup Wings</span>
+                    <span className="logo-text" style={{ color: '#ffffff' }}>Startup Wing</span>
                   </div>
                   
                   <div className="footer-links">
@@ -238,7 +238,7 @@ const About = ({ onLogin, user, onLogout }) => {
                 </div>
                 
                 <div className="footer-bottom">
-                  <p className="footer-tagline" style={{ color: '#ffffff' }}>Startup Wings – Skip the Guesswork, Build Smarter.</p>
+                  <p className="footer-tagline" style={{ color: '#ffffff' }}>Startup Wing – Skip the Guesswork, Build Smarter.</p>
                 </div>
               </div>
             </footer>

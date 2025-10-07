@@ -283,7 +283,7 @@ const Homepage = ({ onLogin, user, onLogout }) => {
                   className="navbar-logo"
                 />
               </div>
-              <span className="logo-text">Startup Wings</span>
+              <span className="logo-text">Startup Wing</span>
             </div>
             
             <div className="nav-links desktop-nav">
@@ -471,7 +471,7 @@ const Homepage = ({ onLogin, user, onLogout }) => {
                 Our Solution
               </h3>
               <p className="solution-text">
-               At Startup Wings, we simplify the messy early-stage journey. From idea validation to launch roadmap — we give you tools, templates, mentors, and step-by-step guidance.
+               At Startup Wing, we simplify the messy early-stage journey. From idea validation to launch roadmap — we give you tools, templates, mentors, and step-by-step guidance.
               We make starting up smarter, faster, and more affordable by cutting out trial-and-error.
               With Startup Bridge, you don't just launch a startup—you launch with confidence. <span className="highlight">tools, templates, mentors, and step-by-step guidance.</span>
 
@@ -523,7 +523,7 @@ const Homepage = ({ onLogin, user, onLogout }) => {
                   <Star key={i} className="star filled" size={20} />
                 ))}
               </div>
-              <p className="testimonial-text">"Startup Wings saved me months of confusion. The validation toolkit is incredible!"</p>
+              <p className="testimonial-text">"Startup Wing saved me months of confusion. The validation toolkit is incredible!"</p>
               <div className="testimonial-author">- Priya S., Mumbai</div>
             </div>
 
@@ -566,7 +566,7 @@ const Homepage = ({ onLogin, user, onLogout }) => {
                   style={{ width: '40px', height: '40px', objectFit: 'contain' }}
                 />
               </div>
-              <span className="logo-text" style={{ color: '#ffffff' }}>Startup Wings</span>
+              <span className="logo-text" style={{ color: '#ffffff' }}>Startup Wing</span>
             </div>
             
             <div className="footer-links">
@@ -584,7 +584,7 @@ const Homepage = ({ onLogin, user, onLogout }) => {
           </div>
           
           <div className="footer-bottom">
-            <p className="footer-tagline" style={{ color: '#ffffff' }}>Startup Wings – Skip the Guesswork, Build Smarter.</p>
+            <p className="footer-tagline" style={{ color: '#ffffff' }}>Startup Wing – Skip the Guesswork, Build Smarter.</p>
           </div>
         </div>
       </footer>

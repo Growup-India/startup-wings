@@ -1130,7 +1130,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               className="sidebar-logo"
             />
             <div className="sidebar-brand">
-              <span>StartupWings</span>
+              <span>Startup Wing</span>
             </div>
           </div>
 
