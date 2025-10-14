@@ -81,7 +81,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
     if (!user?.id) return
     
     try {
-      const response = await fetch(`http://localhost:5000/api/profile/${user.id}`, {
+      const response = await fetch(`https://startup-wings-b.onrender.com/api/profile/${user.id}`, {
         credentials: "include",
       })
       
@@ -107,7 +107,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
   // Fetch user data from API if not provided as prop
   useEffect(() => {
     if (!propUser) {
-      fetch("http://localhost:5000/api/current_user", {
+      fetch("https://startup-wings-b.onrender.com/api/current_user", {
         credentials: "include",
       })
         .then((res) => res.json())
@@ -155,7 +155,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/profile', {
+      const response = await fetch('https://startup-wings-b.onrender.com/api/profile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
         }
         
         try {
-          await fetch("http://localhost:5000/auth/logout", {
+          await fetch("https://startup-wings-b.onrender.com/auth/logout", {
             credentials: "include"
           })
         } catch (error) {
