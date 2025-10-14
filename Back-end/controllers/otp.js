@@ -1,11 +1,11 @@
 const User = require('../models/user');
 const { generateToken } = require('../utils/generateToken');
-const { sendOTP } = require('../config/fast2sms');
+const { sendOTP } = require('../config/Fast2SMS');
 
 // Store OTPs temporarily (in production, use Redis)
 const otpStore = new Map();
 
-// Send OTP to mobile number
+// Send OTP to mobile numberw
 const sendMobileOTP = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
