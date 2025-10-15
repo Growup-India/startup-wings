@@ -1,3 +1,4 @@
+// models/user.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -55,6 +56,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
+  firebaseUid: {
+    type: String,
+    unique: true,
+    sparse: true // Store Firebase UID for phone auth users
+  },
   displayName: String,
   photo: String,
   picture: String, // For Google OAuth
@@ -77,11 +83,12 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for sorting by recent users
+// Index for sorting by recent users and faster queries
 userSchema.index({ createdAt: -1 });
 userSchema.index({ email: 1 });
 userSchema.index({ phoneNumber: 1 });
 userSchema.index({ googleId: 1 });
+userSchema.index({ firebaseUid: 1 }); // NEW: Index for Firebase UID
 
 // Ensure at least one authentication method is present
 userSchema.pre('validate', function(next) {
@@ -136,7 +143,8 @@ userSchema.methods.getPublicProfile = function() {
     isEmailVerified: this.isEmailVerified,
     isActive: this.isActive,
     lastLogin: this.lastLogin,
-    createdAt: this.createdAt
+    createdAt: this.createdAt,
+    firebaseUid: this.firebaseUid // Include Firebase UID in public profile
   };
 };
 
@@ -152,6 +160,52 @@ userSchema.statics.findByEmailOrPhone = async function(identifier) {
   }
   
   return null;
+};
+
+// NEW: Static method to find user by Firebase UID
+userSchema.statics.findByFirebaseUid = async function(firebaseUid) {
+  return await this.findOne({ firebaseUid });
+};
+
+// NEW: Static method to find or create user from Firebase auth
+userSchema.statics.findOrCreateFromFirebase = async function(firebaseData) {
+  const { uid, phoneNumber, displayName } = firebaseData;
+  
+  // Try to find existing user by Firebase UID
+  let user = await this.findOne({ firebaseUid: uid });
+  
+  if (user) {
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+    return { user, isNewUser: false };
+  }
+  
+  // Try to find by phone number (in case user registered via phone before Firebase)
+  user = await this.findOne({ phoneNumber });
+  
+  if (user) {
+    // Link Firebase UID to existing user
+    user.firebaseUid = uid;
+    user.isPhoneVerified = true;
+    user.lastLogin = new Date();
+    await user.save();
+    return { user, isNewUser: false };
+  }
+  
+  // Create new user
+  const userName = displayName || `User_${phoneNumber.slice(-4)}`;
+  
+  user = new this({
+    phoneNumber,
+    name: userName,
+    firebaseUid: uid,
+    isPhoneVerified: true,
+    lastLogin: new Date()
+  });
+  
+  await user.save();
+  return { user, isNewUser: true };
 };
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);

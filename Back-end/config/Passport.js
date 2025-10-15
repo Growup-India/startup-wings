@@ -15,19 +15,28 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+// FIXED: Use full callback URL instead of relative path
+const getCallbackURL = () => {
+  const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+  return `${baseUrl}/auth/google/callback`;
+};
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/auth/google/callback',
-      proxy: true
+      callbackURL: getCallbackURL(), // FIXED: Full URL
+      proxy: true,
+      // ADDED: For mobile support
+      userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         console.log('=== Google OAuth Callback ===');
         console.log('Google Profile ID:', profile.id);
         console.log('Email:', profile.emails?.[0]?.value);
+        console.log('Callback URL used:', getCallbackURL());
 
         const googleId = profile.id;
         const email = profile.emails?.[0]?.value;
@@ -77,6 +86,7 @@ passport.use(
             user.displayName = displayName || user.displayName;
             user.photo = photo || user.photo;
             user.name = name || user.name;
+            user.isEmailVerified = true; // Mark as verified
             user.lastLogin = new Date();
             await user.save();
             return done(null, user);
@@ -91,6 +101,7 @@ passport.use(
           name: name,
           displayName,
           photo,
+          isEmailVerified: true, // Google emails are verified
           lastLogin: new Date()
         });
         

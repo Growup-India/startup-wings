@@ -1,5 +1,6 @@
+// routes/otp.js
 const express = require('express');
-const { sendMobileOTP, verifyMobileOTP, resendOTP } = require('../controllers/otp');
+const { initiateMobileOTP, verifyFirebaseToken, checkPhoneNumber } = require('../controllers/otp');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 
@@ -8,19 +9,19 @@ const router = express.Router();
 // Rate limiting for OTP endpoints
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: 10, // 10 requests per window (increased for Firebase)
   message: {
     success: false,
     error: 'Too many OTP requests. Please try again after 15 minutes.'
   },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Strict rate limiting for verification attempts
 const verifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 verification attempts per window
+  max: 15, // 15 verification attempts per window
   message: {
     success: false,
     error: 'Too many verification attempts. Please try again after 15 minutes.'
@@ -39,22 +40,18 @@ const validatePhoneNumber = [
     .withMessage('Please enter a valid Indian mobile number (e.g., +919876543210)'),
 ];
 
-// Validation middleware for OTP verification
-const validateOTPVerification = [
+// Validation middleware for Firebase token verification
+const validateFirebaseVerification = [
   body('phoneNumber')
     .trim()
     .notEmpty()
     .withMessage('Phone number is required')
     .matches(/^\+91[6-9]\d{9}$/)
     .withMessage('Invalid phone number format'),
-  body('otp')
+  body('idToken')
     .trim()
     .notEmpty()
-    .withMessage('OTP is required')
-    .isLength({ min: 6, max: 6 })
-    .withMessage('OTP must be 6 digits')
-    .isNumeric()
-    .withMessage('OTP must contain only numbers'),
+    .withMessage('Firebase ID token is required'),
   body('name')
     .optional()
     .trim()
@@ -75,42 +72,43 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Send OTP to mobile number
+// Initiate OTP session (Firebase will handle actual OTP sending on client)
 router.post(
-  '/send',
+  '/initiate',
   otpLimiter,
   validatePhoneNumber,
   handleValidationErrors,
-  sendMobileOTP
+  initiateMobileOTP
 );
 
-// Verify OTP and login/register
+// Verify Firebase ID token and login/register
 router.post(
   '/verify',
   verifyLimiter,
-  validateOTPVerification,
+  validateFirebaseVerification,
   handleValidationErrors,
-  verifyMobileOTP
+  verifyFirebaseToken
 );
 
-// Resend OTP
+// Check if phone number exists
 router.post(
-  '/resend',
+  '/check',
   otpLimiter,
   validatePhoneNumber,
   handleValidationErrors,
-  resendOTP
+  checkPhoneNumber
 );
 
 // Health check endpoint for OTP service
 router.get('/health', (req, res) => {
-  const fast2smsConfigured = !!process.env.FAST2SMS_API_KEY;
+  const firebaseConfigured = process.env.FIREBASE_PROJECT_ID ? true : false;
   
   res.json({
     success: true,
     service: 'OTP Service',
     status: 'operational',
-    smsProvider: fast2smsConfigured ? 'Fast2SMS' : 'Mock (Development)',
+    provider: 'Firebase Authentication',
+    configured: firebaseConfigured,
     timestamp: new Date().toISOString()
   });
 });
