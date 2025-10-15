@@ -1,12 +1,13 @@
 // controllers/otp.js
 const User = require('../models/user');
 const { generateToken } = require('../utils/generateToken');
+const { sendOTP } = require('../config/Fast2SMS');
 
 // Store OTP session data temporarily (in production, use Redis)
 const otpSessionStore = new Map();
 
-// Initiate OTP send (client-side Firebase will handle actual sending)
-const initiateMobileOTP = async (req, res) => {
+// Send OTP to mobile numberw
+const sendMobileOTP = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
 
