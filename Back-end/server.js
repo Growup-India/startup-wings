@@ -11,7 +11,7 @@ require('./config/Passport');
 const authRoutes = require('./routes/authroutes');
 const contactRoutes = require('./routes/contactroutes');
 const otpRoutes = require('./routes/otproutes');
-const profileRoutes = require('./routes/profileroutes');
+const profileRoutes = require('./routes/profileRoutes');
 const { generateToken } = require('./utils/generateToken');
 
 const app = express();
