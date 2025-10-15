@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { auth } from "../config/firebase";
 import "./css/authmodal.css";
 
 const AuthModal = ({ isOpen, onClose, onLogin }) => {
@@ -12,6 +14,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,16 +24,53 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     otp: "",
   });
 
-  if (!isOpen) return null;
-
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+  // Setup reCAPTCHA
+  useEffect(() => {
+    if (isMobileAuth && !otpSent && isOpen) {
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (e) {
+          console.log('Error clearing recaptcha:', e);
+        }
+      }
+
+      try {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          'size': 'invisible',
+          'callback': (response) => {
+            console.log('reCAPTCHA solved');
+          },
+          'expired-callback': () => {
+            console.log('reCAPTCHA expired');
+            setError('reCAPTCHA expired. Please try again.');
+          }
+        });
+      } catch (e) {
+        console.error('Error initializing recaptcha:', e);
+      }
+    }
+
+    return () => {
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (e) {
+          console.log('Cleanup error:', e);
+        }
+      }
+    };
+  }, [isMobileAuth, otpSent, isOpen]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     
-    // Client-side validation for email/password auth
     if (!isMobileAuth && !isLogin && formData.password !== formData.confirmPassword) {
       setError("Passwords don't match!");
       setLoading(false);
@@ -39,66 +79,120 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
 
     try {
       if (isMobileAuth) {
-        // Mobile OTP Authentication
         if (!otpSent) {
-          // Send OTP
-          const response = await fetch(`${API_BASE_URL}/api/otp/send`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            setOtpSent(true);
-            alert(`OTP sent to ${formData.phoneNumber}${data.otp ? `. OTP: ${data.otp}` : ''}`);
-          } else {
-            setError(data.error || "Failed to send OTP");
-          }
-        } else {
-          // Verify OTP
-          const response = await fetch(`${API_BASE_URL}/api/otp/verify`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              phoneNumber: formData.phoneNumber,
-              otp: formData.otp,
-              name: formData.name
-            }),
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            // Store JWT token
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-            
-            // Success message
-            alert(data.isNewUser 
-              ? `Welcome ${data.user.name}! Your account has been created.`
-              : `Welcome back, ${data.user.name}!`
+          try {
+            const appVerifier = window.recaptchaVerifier;
+            const confirmation = await signInWithPhoneNumber(
+              auth, 
+              formData.phoneNumber, 
+              appVerifier
             );
             
-            // Call onLogin callback
-            if (onLogin) {
-              onLogin(data.user);
+            setConfirmationResult(confirmation);
+            setOtpSent(true);
+            console.log('OTP sent successfully via Firebase');
+            
+            alert('OTP sent to your phone number successfully!');
+
+            try {
+              await fetch(`${API_BASE_URL}/api/otp/initiate`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
+              });
+            } catch (err) {
+              console.log('Backend initiate call failed, but OTP was sent:', err);
+            }
+
+          } catch (error) {
+            console.error('Firebase OTP error:', error);
+            
+            if (error.code === 'auth/invalid-phone-number') {
+              setError('Invalid phone number format. Use +91XXXXXXXXXX');
+            } else if (error.code === 'auth/too-many-requests') {
+              setError('Too many requests. Please try again later.');
+            } else if (error.code === 'auth/quota-exceeded') {
+              setError('SMS quota exceeded. Please try again later.');
+            } else if (error.code === 'auth/captcha-check-failed') {
+              setError('reCAPTCHA verification failed. Please try again.');
+            } else {
+              setError('Failed to send OTP. Please try again.');
             }
             
-            // Navigate to dashboard
-            navigate('/dashboard');
-            onClose();
-          } else {
-            setError(data.error || "Invalid OTP");
+            if (window.recaptchaVerifier) {
+              try {
+                window.recaptchaVerifier.clear();
+                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                  'size': 'invisible',
+                });
+              } catch (e) {
+                console.error('Error resetting recaptcha:', e);
+              }
+            }
+          }
+        } else {
+          try {
+            const result = await confirmationResult.confirm(formData.otp);
+            const user = result.user;
+            
+            const idToken = await user.getIdToken();
+            
+            const response = await fetch(`${API_BASE_URL}/api/otp/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                phoneNumber: formData.phoneNumber,
+                idToken: idToken,
+                name: formData.name
+              }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+              localStorage.setItem("token", data.token);
+              localStorage.setItem("user", JSON.stringify(data.user));
+              
+              alert(data.isNewUser 
+                ? `Welcome ${data.user.name}! Your account has been created.`
+                : `Welcome back, ${data.user.name}!`
+              );
+              
+              if (onLogin) {
+                onLogin(data.user);
+              }
+              
+              setFormData({
+                name: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+                phoneNumber: "",
+                otp: "",
+              });
+              
+              navigate('/dashboard');
+              onClose();
+            } else {
+              setError(data.error || "Verification failed");
+            }
+          } catch (error) {
+            console.error('Firebase verification error:', error);
+            
+            if (error.code === 'auth/invalid-verification-code') {
+              setError('Invalid OTP. Please check and try again.');
+            } else if (error.code === 'auth/code-expired') {
+              setError('OTP has expired. Please request a new one.');
+            } else {
+              setError(error.message || 'Failed to verify OTP. Please try again.');
+            }
           }
         }
       } else {
-        // Email/Password Authentication
         const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
         const payload = isLogin 
           ? { email: formData.email, password: formData.password }
@@ -120,17 +214,14 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
         const data = await response.json();
 
         if (data.success) {
-          // Store JWT token
           localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
           
-          // Success message
           alert(isLogin 
             ? `Welcome back, ${data.user.name}!` 
             : `Account created successfully! Welcome, ${data.user.name}!`
           );
           
-          // Reset form
           setFormData({
             name: "",
             email: "",
@@ -140,7 +231,6 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
             otp: "",
           });
           
-          // Call onLogin callback
           if (onLogin) {
             onLogin(data.user);
           }
@@ -172,6 +262,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     setError("");
     setOtpSent(false);
     setIsMobileAuth(false);
+    setConfirmationResult(null);
     setFormData({
       name: "",
       email: "",
@@ -182,14 +273,19 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     });
   };
 
+  // FIXED: Google Auth handler with proper URL
   const handleGoogleAuth = () => {
-    window.location.href = `${API_BASE_URL}/auth/google`;
+    console.log('Initiating Google OAuth...');
+    // FIXED: Use full backend URL
+    const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    window.location.href = `${backendUrl}/auth/google`;
   };
 
   const handleMobileAuth = () => {
     setIsMobileAuth(true);
     setOtpSent(false);
     setError("");
+    setConfirmationResult(null);
     setFormData({
       name: "",
       email: "",
@@ -203,26 +299,36 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
   const handleResendOTP = async () => {
     setLoading(true);
     setError("");
+    setOtpSent(false);
+    setConfirmationResult(null);
+    setFormData(prev => ({ ...prev, otp: "" }));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/otp/resend`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (e) {
+          console.log('Error clearing recaptcha:', e);
+        }
+      }
+      
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        alert(`OTP resent to ${formData.phoneNumber}${data.otp ? `. OTP: ${data.otp}` : ''}`);
-      } else {
-        setError(data.error || "Failed to resend OTP");
-      }
+      const appVerifier = window.recaptchaVerifier;
+      const confirmation = await signInWithPhoneNumber(
+        auth, 
+        formData.phoneNumber, 
+        appVerifier
+      );
+      
+      setConfirmationResult(confirmation);
+      setOtpSent(true);
+      alert(`OTP resent to ${formData.phoneNumber}`);
     } catch (error) {
       console.error("Resend OTP error:", error);
-      setError("Failed to resend OTP");
+      setError("Failed to resend OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -230,6 +336,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
 
   const handleBackToPhone = () => {
     setOtpSent(false);
+    setConfirmationResult(null);
     setFormData(prev => ({ ...prev, otp: "" }));
     setError("");
   };
@@ -237,6 +344,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
   const handleBackToEmail = () => {
     setIsMobileAuth(false);
     setOtpSent(false);
+    setConfirmationResult(null);
     setError("");
     setFormData({
       name: "",
@@ -252,8 +360,9 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     <div className="auth-overlay">
       <div className="auth-backdrop" onClick={onClose}></div>
 
+      <div id="recaptcha-container"></div>
+
       <div className="auth-card">
-        {/* Header */}
         <div className="auth-header">
           <h2>
             {isMobileAuth 
@@ -276,17 +385,14 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
           }
         </p>
 
-        {/* Error Message */}
         {error && (
           <div className="error-message">
             {error}
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="auth-form">
           {isMobileAuth ? (
-            // Mobile OTP Flow
             <>
               {!otpSent ? (
                 <>
@@ -433,7 +539,6 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
               )}
             </>
           ) : (
-            // Email/Password Flow
             <>
               {!isLogin && (
                 <div className="form-group">
@@ -541,12 +646,10 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
 
         {!isMobileAuth && !otpSent && (
           <>
-            {/* Divider */}
             <div className="auth-divider">
               <span>or continue with</span>
             </div>
 
-            {/* Alternative Sign-in Options */}
             <div className="auth-alternatives">
               <button 
                 type="button" 
@@ -576,7 +679,6 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
               </button>
             </div>
 
-            {/* Toggle */}
             <div className="auth-toggle">
               <p>
                 {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
