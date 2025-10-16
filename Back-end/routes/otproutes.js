@@ -72,7 +72,6 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
-// Initiate OTP session (Firebase will handle actual OTP sending on client)
 router.post(
   '/initiate',
   otpLimiter,
