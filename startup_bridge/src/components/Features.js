@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Users, Target, TrendingUp, Shield, Zap, Menu, X, User, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import './css/features.css'
+import { CheckCircle, Users, Target, TrendingUp, Shield, Zap } from 'lucide-react';
+import './css/features.css';
 import AuthModal from './AuthModal';
-import img2 from './img/logo.jpeg';
+import Navbar from './Navbar';
+import Footer from './Footer';
 
 const Features = ({ onLogin, user, onLogout }) => {
-  const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(user || null);
 
@@ -28,127 +25,24 @@ const Features = ({ onLogin, user, onLogout }) => {
     }
   }, [user]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleDashboardClick = () => {
-    navigate('/dashboard');
-  };
-
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('startupProfile');
-      setLoggedInUser(null);
-      if (onLogout) {
-        onLogout();
-      }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('startupProfile');
+    setLoggedInUser(null);
+    if (onLogout) {
+      onLogout();
     }
   };
 
   return (
     <div className="features-page">
       {/* Navigation */}
-      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="nav-container">
-          <div className="nav-content">
-            <div className="logo">
-              <div className="logo-icon">
-                <img 
-                  src={img2} 
-                  alt="Company Logo" 
-                  className="navbar-logo"
-                />
-              </div>
-              <span className="logo-text">Startup Wing</span>
-            </div>
-            
-            <div className="nav-links desktop-nav">
-              <a href="/">Home</a>
-              <a href="/features">Features</a>
-              <a href="/about">About</a>
-              <a href="/Services">Services</a>
-              {loggedInUser ? (
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <button className="cta-button" onClick={handleDashboardClick} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px' }}>
-                    <User className="icon" size={18} />
-                    <span>Dashboard</span>
-                  </button>
-                  <button className="cta-button" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', background: '#ef4444' }}>
-                    <LogOut className="icon" size={18} />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              ) : (
-                <button className="cta-button" onClick={() => setIsAuthOpen(true)}>
-                  <User className="icon" />
-                </button>
-              )}
-            </div>
-
-            <button 
-              className="mobile-menu-btn"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="mobile-menu">
-            <div className="mobile-menu-content">
-              <a href="/" onClick={() => setIsMenuOpen(false)}>Home</a>
-              <a href="/features" onClick={() => setIsMenuOpen(false)}>Features</a>
-              <a href="/about" onClick={() => setIsMenuOpen(false)}>About</a>
-              <a href="/Services" onClick={() => setIsMenuOpen(false)}>Services</a>
-              {loggedInUser ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                  <button 
-                    className="cta-button mobile-user"
-                    onClick={() => {
-                      handleDashboardClick();
-                      setIsMenuOpen(false);
-                    }}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
-                  >
-                    <User className="icon" size={18} />
-                    <span>Dashboard</span>
-                  </button>
-                  <button 
-                    className="cta-button mobile-user"
-                    onClick={() => {
-                      handleLogout();
-                      setIsMenuOpen(false);
-                    }}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', background: '#ef4444' }}
-                  >
-                    <LogOut className="icon" size={18} />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  className="cta-button mobile-cta"
-                  onClick={() => {
-                    setIsAuthOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <User className="icon" />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </nav>
+      <Navbar 
+        loggedInUser={loggedInUser}
+        onLogout={handleLogout}
+        onOpenAuth={() => setIsAuthOpen(true)}
+      />
 
       {/* Features Section */}
       <section id="features" className="features">
@@ -198,40 +92,8 @@ const Features = ({ onLogin, user, onLogout }) => {
         </div>
       </section>
 
-      <footer className="footer">
-              <div className="container">
-                <div className="footer-content">
-                  <div className="footer-logo">
-                    <div className="logo-icon">
-                      <img
-                        src={img2}
-                        alt="Startup Wings Logo"
-                        className="navbar-logo"
-                        style={{ width: '40px', height: '40px', objectFit: 'contain' }}
-                      />
-                    </div>
-                    <span className="logo-text" style={{ color: '#ffffff' }}>Startup Wing</span>
-                  </div>
-                  
-                  <div className="footer-links">
-                    <a href="/about" style={{ color: '#ffffff' }}>About</a>
-                    <a href="/features" style={{ color: '#ffffff' }}>Features</a>
-                    <a href="#blog" style={{ color: '#ffffff' }}>Blog</a>
-                    <a href="#contact" style={{ color: '#ffffff' }}>Contact</a>
-                  </div>
-                  
-                  <div className="social-icons">
-                    <div className="social-icon">in</div>
-                    <div className="social-icon">YT</div>
-                    <div className="social-icon">X</div>
-                  </div>
-                </div>
-                
-                <div className="footer-bottom">
-                  <p className="footer-tagline" style={{ color: '#ffffff' }}>Startup Wing – Skip the Guesswork, Build Smarter.</p>
-                </div>
-              </div>
-            </footer>
+      {/* Footer */}
+      <Footer />
             
       {/* Auth Modal */}
       <AuthModal 

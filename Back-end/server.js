@@ -32,7 +32,7 @@ app.use(cors({
 // Session configuration (must be before passport initialization)
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+    secret: process.env.SESSION_SECRET || '0c41809fbd59a79cdc663e685f3293f1610eed90faa4976b66cff3cc05e9075a992566a8f0dbe8fb451ed7f7337c6f1252e1c29f944924aa69eec747fb96164d',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -93,10 +93,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/startupbridge')
   .then(() => {
-    console.log('✅ Connected to MongoDB');
-    console.log(`📊 Database: ${mongoose.connection.name}`);
+    console.log('Connected to MongoDB');
+    console.log(`Database: ${mongoose.connection.name}`);
   })
-  .catch((err) => console.error('❌ MongoDB connection error:', err));
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 // MongoDB connection event listeners
 mongoose.connection.on('error', (err) => {
@@ -110,13 +110,23 @@ mongoose.connection.on('disconnected', () => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  const fast2smsConfigured = !!process.env.FAST2SMS_API_KEY;
+  
+  // Check Firebase configuration
+  let firebaseConfigured = false;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const serviceAccountPath = path.join(__dirname, 'config', 'serviceAccountKey.json');
+    firebaseConfigured = fs.existsSync(serviceAccountPath);
+  } catch (err) {
+    firebaseConfigured = false;
+  }
   
   res.status(200).json({ 
     status: 'OK', 
     message: 'Server is running',
     database: dbStatus,
-    smsProvider: fast2smsConfigured ? 'Fast2SMS' : 'Mock (Development)',
+    otpProvider: firebaseConfigured ? 'Firebase Authentication' : 'Not Configured',
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString()
   });
@@ -193,7 +203,8 @@ app.use('/api/otp', otpRoutes);
 app.use('/api/profile', profileRoutes);
 
 // 404 handler
-app.use('*', (req, res) => {
+// 404 handler
+app.use((req, res) => {
   res.status(404).json({ 
     success: false,
     error: 'Route not found',
@@ -277,18 +288,28 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log('═══════════════════════════════════════════════════');
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
-  console.log(`💾 Database: ${process.env.MONGODB_URI ? 'Remote MongoDB' : 'Local MongoDB'}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`Database: ${process.env.MONGODB_URI ? 'Remote MongoDB' : 'Local MongoDB'}`);
   
-  // Check Fast2SMS configuration
-  const fast2smsConfigured = !!process.env.FAST2SMS_API_KEY;
-  if (fast2smsConfigured) {
-    console.log('📱 SMS Provider: Fast2SMS (Enabled)');
+  // Check Firebase configuration
+  let firebaseConfigured = false;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const serviceAccountPath = path.join(__dirname, 'config', 'serviceAccountKey.json');
+    firebaseConfigured = fs.existsSync(serviceAccountPath);
+  } catch (err) {
+    firebaseConfigured = false;
+  }
+  
+  if (firebaseConfigured) {
+    console.log('🔥 OTP Provider: Firebase Authentication (Configured)');
   } else {
-    console.log('📱 SMS Provider: Mock OTP (Development Mode)');
-    console.log('   ⚠️  Set FAST2SMS_API_KEY in .env to enable real SMS');
+    console.log('🔥 OTP Provider: Firebase Authentication (Not Configured)');
+    console.log('   ⚠️  Download serviceAccountKey.json from Firebase Console');
+    console.log('   📁 Place it in: back-end/config/serviceAccountKey.json');
   }
   
   // Display available routes
@@ -301,10 +322,10 @@ app.listen(PORT, () => {
   console.log('   - GET    /auth/google/callback    (Google OAuth Callback)');
   console.log('   - GET    /auth/logout             (Logout)');
   console.log('');
-  console.log('   OTP Authentication:');
-  console.log('   - POST   /api/otp/send            (Send OTP to Mobile)');
-  console.log('   - POST   /api/otp/verify          (Verify OTP & Login)');
-  console.log('   - POST   /api/otp/resend          (Resend OTP)');
+  console.log('   OTP Authentication (Firebase):');
+  console.log('   - POST   /api/otp/initiate        (Initiate OTP Session)');
+  console.log('   - POST   /api/otp/verify          (Verify Firebase Token & Login)');
+  console.log('   - POST   /api/otp/check           (Check Phone Number)');
   console.log('   - GET    /api/otp/health          (OTP Service Health Check)');
   console.log('');
   console.log('   Profile Management:');
@@ -319,9 +340,15 @@ app.listen(PORT, () => {
   console.log('');
   console.log('🔒 Rate Limits Applied:');
   console.log('   - General: 100 requests / 15 min');
-  console.log('   - OTP Send: 5 requests / 15 min');
-  console.log('   - OTP Verify: 10 requests / 15 min');
+  console.log('   - OTP Initiate: 10 requests / 15 min');
+  console.log('   - OTP Verify: 15 requests / 15 min');
   console.log('   - Contact Form: 5 requests / hour');
   console.log('   - Profile: 20 requests / 15 min');
+  console.log('');
+  console.log('📱 Firebase Integration:');
+  console.log('   - Client-side OTP sending (via Firebase SDK)');
+  console.log('   - Backend token verification (Firebase Admin SDK)');
+  console.log('   - reCAPTCHA protection included');
+  console.log('   - No SMS API costs');
   console.log('═══════════════════════════════════════════════════');
 });

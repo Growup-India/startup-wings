@@ -53,7 +53,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
     customerBase: "",
   })
 
-  // Calculate profile completion percentage
   const calculateProfileCompletion = () => {
     const fields = [
       'founderName',
@@ -76,7 +75,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
     return Math.round((filledFields / fields.length) * 100)
   }
 
-  // Fetch profile data from backend - wrapped in useCallback
   const fetchProfileData = useCallback(async () => {
     if (!user?.id) return
     
@@ -104,7 +102,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
     }
   }, [user])
 
-  // Fetch user data from API if not provided as prop
   useEffect(() => {
     if (!propUser) {
       fetch("https://startup-wings-b.onrender.com/api/current_user", {
@@ -118,7 +115,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
     }
   }, [propUser])
 
-  // Fetch profile data when user is available
   useEffect(() => {
     if (user?.id) {
       fetchProfileData()
@@ -266,13 +262,13 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
   }
 
   const renderProfileView = () => (
-    <div className="dashboard-card" style={{ 
+    <div className="dashboard-card profile-view-card" style={{ 
       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       border: 'none',
       boxShadow: '0 10px 40px rgba(0,0,0,0.08)'
     }}>
-      <div className="dashboard-header" style={{
-        background: 'linear-gradient(135deg, #ffffffff 0%, #7c3aed 100%)',
+      <div className="profile-header" style={{
+        background: 'linear-gradient(135deg, #a78bfa 0%, #c084fc 100%)',
         padding: '40px',
         borderRadius: '20px 20px 0 0',
         color: 'white',
@@ -290,18 +286,27 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
           opacity: 0.5
         }} />
         
-        <div style={{ 
+        <div className="profile-header-content" style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
           position: 'relative',
-          zIndex: 1
+          zIndex: 1,
+          flexWrap: 'wrap',
+          gap: '20px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div className="profile-user-info" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '20px', 
+            flex: '1', 
+            minWidth: '250px' 
+          }}>
             {getUserPhoto() && (
               <img 
                 src={getUserPhoto()} 
                 alt="Profile" 
+                className="profile-photo"
                 width={100} 
                 height={100}
                 style={{ 
@@ -315,7 +320,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                 }}
               />
             )}
-            <div>
+            <div className="profile-text-info" style={{ flex: 1, minWidth: 0 }}>
               <h2 style={{ 
                 fontSize: '32px', 
                 margin: '0 0 8px 0',
@@ -329,15 +334,17 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                 fontSize: '16px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                flexWrap: 'wrap'
               }}>
                 <Mail size={16} />
-                {user?.email}
+                <span style={{ wordBreak: 'break-all' }}>{user?.email}</span>
               </p>
             </div>
           </div>
           
           <button 
+            className="edit-profile-btn"
             onClick={handleEditProfile}
             style={{
               display: 'flex',
@@ -345,14 +352,15 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               gap: '8px',
               padding: '14px 28px',
               background: 'white',
-              color: '#4f46e5',
+              color: '#a78bfa',
               border: 'none',
               borderRadius: '12px',
               cursor: 'pointer',
               fontSize: '15px',
               fontWeight: '600',
               transition: 'all 0.3s ease',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              whiteSpace: 'nowrap'
             }}
             onMouseOver={(e) => {
               e.target.style.transform = 'translateY(-2px)'
@@ -370,30 +378,20 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
       </div>
 
       {profileExists ? (
-        <div style={{ padding: '0 30px 40px' }}>
-          {/* Stats Overview Cards */}
-          <div style={{
+        <div className="profile-content" style={{ padding: '0 30px 40px' }}>
+          <div className="stats-grid" style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
             gap: '20px',
             marginBottom: '30px'
           }}>
-            <div style={{
+            <div className="stat-card" style={{
               background: 'white',
               padding: '24px',
               borderRadius: '16px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               border: '1px solid #e2e8f0',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(79,70,229,0.15)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+              transition: 'all 0.3s ease'
             }}>
               <div style={{ 
                 display: 'flex', 
@@ -417,7 +415,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
                   <Briefcase size={20} color="white" />
                 </div>
@@ -432,22 +431,13 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               </p>
             </div>
 
-            <div style={{
+            <div className="stat-card" style={{
               background: 'white',
               padding: '24px',
               borderRadius: '16px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               border: '1px solid #e2e8f0',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(249,115,22,0.15)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+              transition: 'all 0.3s ease'
             }}>
               <div style={{ 
                 display: 'flex', 
@@ -471,7 +461,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                   background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
                   <Rocket size={20} color="white" />
                 </div>
@@ -486,22 +477,13 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               </p>
             </div>
 
-            <div style={{
+            <div className="stat-card" style={{
               background: 'white',
               padding: '24px',
               borderRadius: '16px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               border: '1px solid #e2e8f0',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(16,185,129,0.15)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+              transition: 'all 0.3s ease'
             }}>
               <div style={{ 
                 display: 'flex', 
@@ -525,7 +507,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                   background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
                   <Users size={20} color="white" />
                 </div>
@@ -541,27 +524,19 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
             </div>
           </div>
 
-          {/* Detailed Information Cards */}
-          <div style={{ 
+          <div className="detail-cards-grid" style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '24px',
             marginBottom: '24px'
           }}>
-            {/* Company Information */}
-            <div style={{
+            <div className="detail-card" style={{
               background: 'white',
               padding: '28px',
               borderRadius: '16px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               border: '1px solid #e2e8f0',
               transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
             }}>
               <div style={{
                 display: 'flex',
@@ -578,7 +553,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
                   <Building size={24} color="white" />
                 </div>
@@ -595,7 +571,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <Building size={18} style={{ color: '#4f46e5', marginTop: '2px', flexShrink: 0 }} />
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ 
                       fontSize: '13px', 
                       color: '#64748b', 
@@ -610,7 +586,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                       fontSize: '16px', 
                       color: '#1e293b', 
                       margin: 0,
-                      fontWeight: '600'
+                      fontWeight: '600',
+                      wordBreak: 'break-word'
                     }}>
                       {profileData.startupName}
                     </p>
@@ -619,7 +596,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <MapPin size={18} style={{ color: '#4f46e5', marginTop: '2px', flexShrink: 0 }} />
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ 
                       fontSize: '13px', 
                       color: '#64748b', 
@@ -634,7 +611,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                       fontSize: '16px', 
                       color: '#1e293b', 
                       margin: 0,
-                      fontWeight: '600'
+                      fontWeight: '600',
+                      wordBreak: 'break-word'
                     }}>
                       {profileData.location}
                     </p>
@@ -644,7 +622,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                 {profileData.foundedYear && (
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                     <Calendar size={18} style={{ color: '#4f46e5', marginTop: '2px', flexShrink: 0 }} />
-                    <div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <p style={{ 
                         fontSize: '13px', 
                         color: '#64748b', 
@@ -670,7 +648,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                 {profileData.website && (
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                     <Globe size={18} style={{ color: '#4f46e5', marginTop: '2px', flexShrink: 0 }} />
-                    <div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <p style={{ 
                         fontSize: '13px', 
                         color: '#64748b', 
@@ -693,13 +671,14 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
-                          transition: 'all 0.3s ease'
+                          transition: 'all 0.3s ease',
+                          wordBreak: 'break-all'
                         }}
                         onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
                         onMouseOut={(e) => e.target.style.textDecoration = 'none'}
                       >
                         Visit Website
-                        <LinkIcon size={14} />
+                        <LinkIcon size={14} style={{ flexShrink: 0 }} />
                       </a>
                     </div>
                   </div>
@@ -707,20 +686,13 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               </div>
             </div>
 
-            {/* Business Metrics */}
-            <div style={{
+            <div className="detail-card" style={{
               background: 'white',
               padding: '28px',
               borderRadius: '16px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
               border: '1px solid #e2e8f0',
               transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
             }}>
               <div style={{
                 display: 'flex',
@@ -737,7 +709,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                   background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
                   <TrendingUp size={24} color="white" />
                 </div>
@@ -755,7 +728,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                 {profileData.monthlyRevenue && (
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                     <DollarSign size={18} style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }} />
-                    <div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <p style={{ 
                         fontSize: '13px', 
                         color: '#64748b', 
@@ -780,7 +753,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <Users size={18} style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }} />
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ 
                       fontSize: '13px', 
                       color: '#64748b', 
@@ -804,7 +777,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                   <Rocket size={18} style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }} />
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <p style={{ 
                       fontSize: '13px', 
                       color: '#64748b', 
@@ -829,20 +802,13 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
             </div>
           </div>
 
-          {/* Startup Description */}
-          <div style={{
+          <div className="description-card" style={{
             background: 'white',
             padding: '32px',
             borderRadius: '16px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
             border: '1px solid #e2e8f0',
             transition: 'all 0.3s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
           }}>
             <div style={{
               display: 'flex',
@@ -859,7 +825,8 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
                 background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                flexShrink: 0
               }}>
                 <Target size={24} color="white" />
               </div>
@@ -878,14 +845,15 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               lineHeight: '1.8',
               color: '#475569',
               margin: 0,
-              textAlign: 'justify'
+              textAlign: 'justify',
+              wordBreak: 'break-word'
             }}>
               {profileData.description}
             </p>
           </div>
         </div>
       ) : (
-        <div style={{ 
+        <div className="no-profile-section" style={{ 
           textAlign: 'center', 
           padding: '60px 40px',
           background: 'white',
@@ -1123,7 +1091,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
 
       <div className="dashboard-layout">
         <div className={`sidebar ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-         <div className="sidebar-header">
+          <div className="sidebar-header">
             <img 
               src={img2} 
               alt="Company Logo" 
@@ -1134,7 +1102,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
             </div>
           </div>
 
-          {/* Profile Progress Bar */}
           <div style={{
             padding: '20px 15px',
             borderBottom: '1px solid rgba(255,255,255,0.1)'
@@ -1161,7 +1128,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               </span>
             </div>
             
-            {/* Progress Bar Container */}
             <div style={{
               width: '100%',
               height: '8px',
@@ -1170,7 +1136,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               overflow: 'hidden',
               position: 'relative'
             }}>
-              {/* Progress Bar Fill */}
               <div style={{
                 width: `${completionPercentage}%`,
                 height: '100%',
@@ -1187,7 +1152,6 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               }} />
             </div>
             
-            {/* Completion Message */}
             {completionPercentage < 100 && (
               <p style={{
                 fontSize: '11px',
