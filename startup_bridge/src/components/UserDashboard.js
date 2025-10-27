@@ -25,7 +25,7 @@ import {
   DollarSign,
   Link as LinkIcon,
 } from "lucide-react"
-import img2 from './img/logo.jpeg'
+import img2 from './img/logo.png'
 
 import Contact from "./Contact"
 import Homepage from "./Homepage"
@@ -1131,7 +1131,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
             <div style={{
               width: '100%',
               height: '8px',
-              background: 'rgba(255,255,255,0.2)',
+              background: 'rgba(2, 2, 2, 0.3)',
               borderRadius: '10px',
               overflow: 'hidden',
               position: 'relative'
@@ -1181,38 +1181,7 @@ const UserDashboard = ({ user: propUser, onLogout }) => {
               </p>
             )}
           </div>
-
-          {getUserPhoto() && (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '15px', 
-              borderBottom: '1px solid rgba(255,255,255,0.1)'
-            }}>
-              <img 
-                src={getUserPhoto()} 
-                alt="Profile" 
-                width={60} 
-                height={60}
-                style={{ 
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '2px solid #fff'
-                }}
-                onError={(e) => {
-                  e.target.style.display = 'none'
-                }}
-              />
-              <p style={{ 
-                marginTop: '10px', 
-                fontSize: '14px', 
-                color: '#fff',
-                fontWeight: '500' 
-              }}>
-                {user?.name || user?.displayName || 'User'}
-              </p>
-            </div>
-          )}
-
+          
           <div className="sidebar-menu">
             <button
               className={`sidebar-item ${activeMenuItem === 'profile' ? 'active' : ''}`}

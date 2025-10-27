@@ -156,10 +156,15 @@ const login = async (req, res) => {
   }
 };
 
-// Google OAuth Login - Find or Create User
-const googleAuth = async (req, res) => {
+// NEW: Mobile-specific Google Auth endpoint
+// For React Native or mobile apps that handle Google Sign-In on client side
+const googleAuthMobile = async (req, res) => {
   try {
-    const { googleId, email, name, displayName, photo } = req.body;
+    const { googleId, email, name, displayName, photo, idToken } = req.body;
+
+    console.log('=== Mobile Google Auth ===');
+    console.log('Google ID:', googleId);
+    console.log('Email:', email);
 
     // Input validation
     if (!googleId) {
@@ -168,6 +173,37 @@ const googleAuth = async (req, res) => {
         error: 'Google ID is required'
       });
     }
+
+    // Optional: Verify idToken with Google (recommended for production)
+    // Uncomment if you want to verify the token
+    /*
+    if (idToken) {
+      const { OAuth2Client } = require('google-auth-library');
+      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+      
+      try {
+        const ticket = await client.verifyIdToken({
+          idToken: idToken,
+          audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        
+        // Verify the googleId matches
+        if (payload.sub !== googleId) {
+          return res.status(401).json({
+            success: false,
+            error: 'Token verification failed'
+          });
+        }
+      } catch (verifyError) {
+        console.error('Token verification error:', verifyError);
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid token'
+        });
+      }
+    }
+    */
 
     const normalizedEmail = email ? email.toLowerCase().trim() : null;
 
@@ -179,7 +215,7 @@ const googleAuth = async (req, res) => {
       console.log('Existing Google user found:', user.email);
       user.lastLogin = new Date();
       
-      // Optionally update profile info if changed
+      // Update profile info if changed
       if (displayName && user.displayName !== displayName) {
         user.displayName = displayName;
       }
@@ -210,7 +246,8 @@ const googleAuth = async (req, res) => {
             name: name || displayName || 'Google User',
             displayName,
             photo,
-            lastLogin: new Date()
+            lastLogin: new Date(),
+            authProvider: 'google'
           });
           
           await user.save();
@@ -223,7 +260,8 @@ const googleAuth = async (req, res) => {
           name: name || displayName || 'Google User',
           displayName,
           photo,
-          lastLogin: new Date()
+          lastLogin: new Date(),
+          authProvider: 'google'
         });
         
         await user.save();
@@ -248,26 +286,25 @@ const googleAuth = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Google auth error:', error);
+    console.error('Mobile Google auth error:', error);
     
     // Handle duplicate key error
     if (error.code === 11000) {
-      // Check if it's a duplicate email or googleId
       if (error.keyPattern && error.keyPattern.email) {
         return res.status(400).json({
           success: false,
-          error: 'An account with this email already exists. Please try logging in normally or contact support.'
+          error: 'An account with this email already exists'
         });
       } else if (error.keyPattern && error.keyPattern.googleId) {
         return res.status(400).json({
           success: false,
-          error: 'This Google account is already registered. Please try again.'
+          error: 'This Google account is already registered'
         });
       }
       
       return res.status(400).json({
         success: false,
-        error: 'Account linking failed. Please try again.'
+        error: 'Account linking failed'
       });
     }
     
@@ -278,6 +315,9 @@ const googleAuth = async (req, res) => {
     });
   }
 };
+
+// Keep the original googleAuth for backward compatibility
+const googleAuth = googleAuthMobile;
 
 const getProfile = async (req, res) => {
   try {
@@ -384,6 +424,7 @@ module.exports = {
   register,
   login,
   googleAuth,
+  googleAuthMobile, // Export mobile-specific endpoint
   getProfile,
   updateProfile
 };

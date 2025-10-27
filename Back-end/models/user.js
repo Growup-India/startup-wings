@@ -71,6 +71,11 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google', 'phone', 'firebase'],
+    default: 'local'
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -88,12 +93,12 @@ userSchema.index({ createdAt: -1 });
 userSchema.index({ email: 1 });
 userSchema.index({ phoneNumber: 1 });
 userSchema.index({ googleId: 1 });
-userSchema.index({ firebaseUid: 1 }); // NEW: Index for Firebase UID
+userSchema.index({ firebaseUid: 1 });
 
 // Ensure at least one authentication method is present
 userSchema.pre('validate', function(next) {
-  if (!this.email && !this.phoneNumber && !this.googleId) {
-    next(new Error('At least one authentication method (email, phone, or Google) is required'));
+  if (!this.email && !this.phoneNumber && !this.googleId && !this.firebaseUid) {
+    next(new Error('At least one authentication method (email, phone, Google, or Firebase) is required'));
   } else {
     next();
   }
@@ -144,7 +149,25 @@ userSchema.methods.getPublicProfile = function() {
     isActive: this.isActive,
     lastLogin: this.lastLogin,
     createdAt: this.createdAt,
-    firebaseUid: this.firebaseUid // Include Firebase UID in public profile
+    firebaseUid: this.firebaseUid,
+    authProvider: this.authProvider
+  };
+};
+
+// Method to get safe user object (for auth responses)
+userSchema.methods.toSafeObject = function() {
+  return {
+    id: this._id,
+    name: this.name,
+    email: this.email,
+    displayName: this.displayName,
+    photo: this.photo || this.picture || this.avatar || this.profilePicture,
+    role: this.role,
+    authProvider: this.authProvider,
+    isPhoneVerified: this.isPhoneVerified,
+    isEmailVerified: this.isEmailVerified,
+    createdAt: this.createdAt,
+    lastLogin: this.lastLogin
   };
 };
 
@@ -154,7 +177,7 @@ userSchema.statics.findByEmailOrPhone = async function(identifier) {
   const isPhone = /^\+[1-9]\d{1,14}$/.test(identifier);
   
   if (isEmail) {
-    return await this.findOne({ email: identifier });
+    return await this.findOne({ email: identifier.toLowerCase().trim() });
   } else if (isPhone) {
     return await this.findOne({ phoneNumber: identifier });
   }
@@ -162,12 +185,29 @@ userSchema.statics.findByEmailOrPhone = async function(identifier) {
   return null;
 };
 
-// NEW: Static method to find user by Firebase UID
+// Static method to find by email or googleId
+userSchema.statics.findByEmailOrGoogleId = async function(email, googleId) {
+  const query = {};
+  
+  if (email && googleId) {
+    query.$or = [{ email: email.toLowerCase().trim() }, { googleId }];
+  } else if (email) {
+    query.email = email.toLowerCase().trim();
+  } else if (googleId) {
+    query.googleId = googleId;
+  } else {
+    return null;
+  }
+  
+  return this.findOne(query);
+};
+
+// Static method to find user by Firebase UID
 userSchema.statics.findByFirebaseUid = async function(firebaseUid) {
   return await this.findOne({ firebaseUid });
 };
 
-// NEW: Static method to find or create user from Firebase auth
+// Static method to find or create user from Firebase auth
 userSchema.statics.findOrCreateFromFirebase = async function(firebaseData) {
   const { uid, phoneNumber, displayName } = firebaseData;
   
@@ -182,30 +222,46 @@ userSchema.statics.findOrCreateFromFirebase = async function(firebaseData) {
   }
   
   // Try to find by phone number (in case user registered via phone before Firebase)
-  user = await this.findOne({ phoneNumber });
-  
-  if (user) {
-    // Link Firebase UID to existing user
-    user.firebaseUid = uid;
-    user.isPhoneVerified = true;
-    user.lastLogin = new Date();
-    await user.save();
-    return { user, isNewUser: false };
+  if (phoneNumber) {
+    user = await this.findOne({ phoneNumber });
+    
+    if (user) {
+      // Link Firebase UID to existing user
+      user.firebaseUid = uid;
+      user.isPhoneVerified = true;
+      user.authProvider = 'firebase';
+      user.lastLogin = new Date();
+      await user.save();
+      return { user, isNewUser: false };
+    }
   }
   
   // Create new user
-  const userName = displayName || `User_${phoneNumber.slice(-4)}`;
+  const userName = displayName || `User_${phoneNumber?.slice(-4) || 'New'}`;
   
   user = new this({
     phoneNumber,
     name: userName,
+    displayName: displayName || userName,
     firebaseUid: uid,
     isPhoneVerified: true,
+    authProvider: 'firebase',
     lastLogin: new Date()
   });
   
   await user.save();
   return { user, isNewUser: true };
+};
+
+// Instance method to check if user has a password
+userSchema.methods.hasPassword = function() {
+  return !!this.password;
+};
+
+// Method to update last login
+userSchema.methods.updateLastLogin = async function() {
+  this.lastLogin = new Date();
+  return await this.save();
 };
 
 module.exports = mongoose.models.User || mongoose.model("User", userSchema);
