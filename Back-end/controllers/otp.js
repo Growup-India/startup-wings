@@ -1,22 +1,22 @@
 // controllers/otp.js
 const User = require('../models/user');
 const { generateToken } = require('../utils/generateToken');
-const { sendOTP } = require('../config/Fast2SMS');
+const { auth } = require('../config/Firebase');
 
 // Store OTP session data temporarily (in production, use Redis)
 const otpSessionStore = new Map();
 
-// Send OTP to mobile numberw
+// ✅ Send OTP to mobile number
 const sendMobileOTP = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
 
     // Validate phone number format (Indian format)
-    const phoneRegex = /^\+91 [6-9]\d{9}$/;
+    const phoneRegex = /^\+91[6-9]\d{9}$/;
     if (!phoneRegex.test(phoneNumber)) {
       return res.status(400).json({
         success: false,
-        error: 'Please provide a valid Indian phone number (e.g., +91 9876543210)'
+        error: 'Please provide a valid Indian phone number (e.g., +919876543210)',
       });
     }
 
@@ -26,29 +26,33 @@ const sendMobileOTP = async (req, res) => {
       sessionId,
       createdAt: Date.now(),
       attempts: 0,
-      verified: false
+      verified: false,
     });
 
     console.log(`📱 OTP session initiated for ${phoneNumber}`);
 
     return res.json({
       success: true,
-      message: 'OTP session initiated. Please verify using Firebase on client side.',
+      message:
+        'OTP session initiated. Please verify using Firebase on client side.',
       phoneNumber: phoneNumber,
       sessionId,
-      method: 'firebase'
+      method: 'firebase',
     });
   } catch (error) {
     console.error('Initiate OTP error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to initiate OTP. Please try again.',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message:
+        process.env.NODE_ENV === 'development'
+          ? error.message
+          : 'Internal server error',
     });
   }
 };
 
-// Verify Firebase ID Token and login/register user
+// ✅ Verify Firebase ID Token and login/register user
 const verifyFirebaseToken = async (req, res) => {
   try {
     const { idToken, phoneNumber, name } = req.body;
@@ -57,7 +61,7 @@ const verifyFirebaseToken = async (req, res) => {
     if (!idToken || !phoneNumber) {
       return res.status(400).json({
         success: false,
-        error: 'ID token and phone number are required'
+        error: 'ID token and phone number are required',
       });
     }
 
@@ -66,21 +70,24 @@ const verifyFirebaseToken = async (req, res) => {
     if (!phoneRegex.test(phoneNumber)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid phone number format'
+        error: 'Invalid phone number format',
       });
     }
 
-    // Verify the Firebase ID token
-    const { auth } = require('../config/Firebase');
+    // ✅ Verify the Firebase ID token
+    const admin = require('firebase-admin');
+    if (!admin.apps.length) {
+      admin.initializeApp();
+    }
+
     let decodedToken;
-    
     try {
-      decodedToken = await auth.verifyIdToken(idToken);
+      decodedToken = await admin.auth().verifyIdToken(idToken);
     } catch (error) {
       console.error('Firebase token verification error:', error);
       return res.status(401).json({
         success: false,
-        error: 'Invalid or expired token. Please try again.'
+        error: 'Invalid or expired token. Please try again.',
       });
     }
 
@@ -88,7 +95,7 @@ const verifyFirebaseToken = async (req, res) => {
     if (decodedToken.phone_number !== phoneNumber) {
       return res.status(400).json({
         success: false,
-        error: 'Phone number mismatch'
+        error: 'Phone number mismatch',
       });
     }
 
@@ -104,18 +111,18 @@ const verifyFirebaseToken = async (req, res) => {
       user.lastLogin = new Date();
       user.isPhoneVerified = true;
       await user.save();
-      
+
       console.log('Existing user logged in:', phoneNumber);
     } else {
       // New user - create account
       const userName = name || `User_${phoneNumber.slice(-4)}`;
-      
+
       user = new User({
         phoneNumber,
         name: userName,
         isPhoneVerified: true,
         lastLogin: new Date(),
-        firebaseUid: decodedToken.uid // Store Firebase UID
+        firebaseUid: decodedToken.uid, // Store Firebase UID
       });
 
       await user.save();
@@ -128,7 +135,9 @@ const verifyFirebaseToken = async (req, res) => {
 
     res.json({
       success: true,
-      message: isNewUser ? 'Account created successfully' : 'Login successful',
+      message: isNewUser
+        ? 'Account created successfully'
+        : 'Login successful',
       token,
       isNewUser,
       user: {
@@ -138,29 +147,32 @@ const verifyFirebaseToken = async (req, res) => {
         email: user.email,
         role: user.role,
         isPhoneVerified: user.isPhoneVerified,
-        lastLogin: user.lastLogin
-      }
+        lastLogin: user.lastLogin,
+      },
     });
   } catch (error) {
     console.error('Verify Firebase token error:', error);
-    
+
     // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        error: 'An account with this phone number already exists'
+        error: 'An account with this phone number already exists',
       });
     }
-    
+
     res.status(500).json({
       success: false,
       error: 'Failed to verify token. Please try again.',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message:
+        process.env.NODE_ENV === 'development'
+          ? error.message
+          : 'Internal server error',
     });
   }
 };
 
-// Check if phone number exists
+// ✅ Check if phone number exists
 const checkPhoneNumber = async (req, res) => {
   try {
     const { phoneNumber } = req.body;
@@ -168,7 +180,7 @@ const checkPhoneNumber = async (req, res) => {
     if (!phoneNumber) {
       return res.status(400).json({
         success: false,
-        error: 'Phone number is required'
+        error: 'Phone number is required',
       });
     }
 
@@ -177,20 +189,24 @@ const checkPhoneNumber = async (req, res) => {
     res.json({
       success: true,
       exists: !!user,
-      isNewUser: !user
+      isNewUser: !user,
     });
   } catch (error) {
     console.error('Check phone number error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to check phone number',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message:
+        process.env.NODE_ENV === 'development'
+          ? error.message
+          : 'Internal server error',
     });
   }
 };
 
+// ✅ Export functions correctly
 module.exports = {
-  initiateMobileOTP,
+  sendMobileOTP,
   verifyFirebaseToken,
-  checkPhoneNumber
+  checkPhoneNumber,
 };

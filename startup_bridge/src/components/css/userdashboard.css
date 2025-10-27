@@ -10,20 +10,24 @@
   position: fixed;
   top: 20px;
   left: 20px;
-  z-index: 1001;
-  background: #f7f7f7;
-  color: #4b5563;
+  z-index: 1002; /* Higher than sidebar */
+  background: #4f46e5;
+  color: #fff;
   border: none;
   border-radius: 8px;
   padding: 12px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
   transition: all 0.3s ease;
 }
 
 .hamburger-btn:hover {
-  background: #1e40af;
+  background: #4338ca;
   transform: scale(1.05);
+}
+
+.hamburger-btn:active {
+  transform: scale(0.95);
 }
 
 /* Sidebar Overlay for Mobile */
@@ -36,6 +40,7 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
+  backdrop-filter: blur(2px);
 }
 
 /* Sidebar Styles - FIXED TO TOP */
@@ -60,6 +65,7 @@
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
   background: linear-gradient(135deg, #f8fafc, #f1f5f9);
   flex-shrink: 0;
@@ -76,7 +82,8 @@
 .sidebar-brand {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0;
+  order: 2;
 }
 
 .sidebar-brand span {
@@ -146,6 +153,8 @@
   border-top: 1px solid #e5e7eb;
   background: #f8fafc;
   flex-shrink: 0;
+  margin-top: auto;
+  padding-bottom: 20px;
 }
 
 .sidebar-logout {
@@ -294,7 +303,10 @@ textarea {
   transform: scale(1.03);
 }
 
-/* Mobile Responsiveness */
+/* ============================================
+   MOBILE RESPONSIVENESS - TABLET AND BELOW
+   ============================================ */
+
 @media (max-width: 768px) {
   .dashboard-layout {
     flex-direction: row;
@@ -302,32 +314,108 @@ textarea {
 
   /* Show hamburger button on mobile */
   .hamburger-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Show overlay when sidebar is open */
   .sidebar-overlay {
-    display: block;
+    display: none;
   }
   
+  /* Hide sidebar by default on mobile */
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
-    z-index: 1000;
+    width: 280px;
+    z-index: 1001; /* Higher than hamburger */
     transform: translateX(-100%);
     transition: transform 0.3s ease;
+    box-shadow: 2px 0 20px rgba(0,0,0,0.3);
   }
 
   /* Show sidebar when open */
   .sidebar.sidebar-open {
     transform: translateX(0);
   }
+
+  /* Show overlay when sidebar is open */
+  .sidebar.sidebar-open ~ .sidebar-overlay,
+  .sidebar-open ~ .sidebar-overlay {
+    display: block;
+  }
+
+  /* Adjust sidebar header spacing on mobile */
+  .sidebar-header {
+    padding: 20px 16px;
+    min-height: 70px;
+    padding-left: 60px;
+  }
+
+  .sidebar-logo {
+    width: 36px;
+    height: 36px;
+    order: 1;
+  }
+
+  .sidebar-brand {
+    order: 2;
+  }
+
+  .sidebar-brand span {
+    font-size: 18px;
+  }
+
+  /* Profile completion section */
+  .sidebar > div:nth-child(2) {
+    padding: 16px 12px;
+  }
+
+  /* User photo section */
+  .sidebar > div:nth-child(3) {
+    padding: 12px;
+  }
+
+  .sidebar > div:nth-child(3) img {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .sidebar > div:nth-child(3) p {
+    font-size: 13px !important;
+    margin-top: 8px !important;
+  }
+
+  /* Sidebar menu items */
+  .sidebar-menu {
+    padding: 12px 0;
+  }
+
+  .sidebar-item {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  /* Sidebar footer - ENSURE IT'S ALWAYS VISIBLE */
+  .sidebar-footer {
+    padding: 12px;
+    margin-top: auto; /* Push to bottom */
+    padding-bottom: 16px;
+  }
+
+  .sidebar-logout {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
   
+  /* Main content takes full width */
   .main-content {
     width: 100%;
     margin-left: 0;
+    padding: 0;
   }
   
   .dashboard-section {
@@ -335,7 +423,7 @@ textarea {
   }
   
   .dashboard-card {
-    padding: 0;
+    padding: 24px 16px;
     margin: 0;
     border-radius: 16px;
     overflow: hidden;
@@ -344,6 +432,7 @@ textarea {
   /* PROFILE VIEW MOBILE STYLES */
   .profile-view-card {
     background: #f3f4f6 !important;
+    padding: 0 !important;
   }
 
   .profile-header {
@@ -370,6 +459,10 @@ textarea {
     width: 80px !important;
     height: 80px !important;
     margin-bottom: 12px !important;
+  }
+
+  .profile-text-info {
+    width: 100%;
   }
 
   .profile-text-info h2 {
@@ -518,24 +611,11 @@ textarea {
   .dashboard-header h2 {
     font-size: 24px;
   }
-  
-  .sidebar-header {
-    padding: 20px 24px;
-  }
-  
-  .sidebar-item {
-    padding: 12px 24px;
-  }
-
-  .sidebar-logo {
-    width: 32px;
-    height: 32px;
-  }
-
-  .sidebar-brand span {
-    font-size: 18px;
-  }
 }
+
+/* ============================================
+   EXTRA SMALL MOBILE - PHONE SIZES
+   ============================================ */
 
 @media (max-width: 480px) {
   .hamburger-btn {
@@ -544,13 +624,81 @@ textarea {
     padding: 10px;
   }
 
+  /* Sidebar adjustments for very small screens */
+  .sidebar {
+    width: 260px; /* Slightly narrower on very small screens */
+  }
+
+  .sidebar.sidebar-open {
+    width: 260px;
+  }
+
+  .sidebar-header {
+    padding: 16px 12px;
+    min-height: 65px;
+    padding-left: 60px;
+  }
+
+  .sidebar-logo {
+    width: 32px;
+    height: 32px;
+    order: 1;
+  }
+
+  .sidebar-brand {
+    order: 2;
+  }
+
+  .sidebar-brand span {
+    font-size: 16px;
+  }
+
+  /* Profile completion section */
+  .sidebar > div:nth-child(2) {
+    padding: 14px 10px;
+  }
+
+  .sidebar > div:nth-child(2) span {
+    font-size: 12px !important;
+  }
+
+  /* User photo section */
+  .sidebar > div:nth-child(3) {
+    padding: 10px;
+  }
+
+  .sidebar > div:nth-child(3) img {
+    width: 45px !important;
+    height: 45px !important;
+  }
+
+  .sidebar > div:nth-child(3) p {
+    font-size: 12px !important;
+    margin-top: 6px !important;
+  }
+
+  /* Sidebar menu items */
+  .sidebar-item {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  /* Sidebar footer */
+  .sidebar-footer {
+    padding: 10px;
+  }
+
+  .sidebar-logout {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
   .dashboard-section {
     padding: 70px 8px 20px 8px;
   }
 
   .dashboard-card {
-    padding: 0;
-    margin: 0;
+    padding: 20px 12px;
     border-radius: 12px;
   }
 
@@ -685,24 +833,6 @@ textarea {
   
   .save-btn {
     padding: 12px 20px;
-    font-size: 15px;
-  }
-
-  .sidebar-header {
-    padding: 16px 20px;
-  }
-
-  .sidebar-logo {
-    width: 28px;
-    height: 28px;
-  }
-
-  .sidebar-brand span {
-    font-size: 16px;
-  }
-
-  .sidebar-item {
-    padding: 14px 20px;
     font-size: 15px;
   }
 }

@@ -2,6 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Star, ArrowRight, Target, Users, Lightbulb, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import img1 from './img/start-up-business-goals-strategy.jpg';
+import img2 from './img/GrowupLogo1.jpeg.jpg';
+import img3 from './img/Swamika.jpg';
+import img4 from './img/clients1.jpg';
+import img5 from './img/aceInfra.jpg';
+import img6 from './img/clients2.jpg';
+import img7 from './img/mg.jpg';
+
 import AuthModal from './AuthModal';
 import Navbar from './Navbar';
 import Footer from './Footer';
@@ -10,32 +17,32 @@ const clients = [
   {
     id: 1,
     name: "GrowUp",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
+    logo: img2,
   },
   {
     id: 2,
     name: "SwamiKaLife",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg",
+    logo: img3,
   },
   {
     id: 3,
-    name: "TechStart",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg",
+    name: "Infinity Vision Overseas",
+    logo: img4,
   },
   {
     id: 4,
-    name: "InnovateCorp",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg",
+    name: "Ace Infra",
+    logo: img5,
   },
   {
     id: 5,
-    name: "FutureBiz",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg",
+    name: "MG",
+    logo: img7,
   },
   {
     id: 6,
-    name: "NextGen",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg",
+    name: "Shree Swami Samarth",
+    logo: img6,
   },
 ];
 

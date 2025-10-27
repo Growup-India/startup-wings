@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import img2 from './img/logo.jpeg';
+import img2 from './img/logo.png';
 
 const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
   const navigate = useNavigate();
@@ -15,6 +15,11 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogoClick = () => {
+    navigate('/');
+    setIsMenuOpen(false);
+  };
 
   const handleDashboardClick = () => {
     navigate('/dashboard');
@@ -33,7 +38,7 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-container">
         <div className="nav-content">
-          <div className="logo">
+          <div className="logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
             <div className="logo-icon">
               <img
                 src={img2}
@@ -64,7 +69,6 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', background: '#ef4444' }}
                 >
                   <LogOut className="icon" size={18} />
-                  <span>Logout</span>
                 </button>
               </div>
             ) : (
@@ -109,7 +113,6 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', background: '#ef4444' }}
                 >
                   <LogOut className="icon" size={18} />
-                  <span>Logout</span>
                 </button>
               </div>
             ) : (
