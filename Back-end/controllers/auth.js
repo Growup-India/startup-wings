@@ -1,129 +1,162 @@
-const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const { generateToken } = require('../utils/generateToken');
 
+// Register new user with email/password
 const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Input validation
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: 'Name, email, and password are required'
-      });
-    }
-
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Please provide a valid email address'
-      });
-    }
-
+    // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists
-    console.log('Checking for existing user with email:', normalizedEmail);
+    // Check if user already exists with this email
     const existingUser = await User.findOne({ email: normalizedEmail });
     
     if (existingUser) {
-      console.log('User already exists with email:', normalizedEmail);
+      // Check if user registered with different auth method
+      if (existingUser.authProvider === 'google') {
+        return res.status(400).json({
+          success: false,
+          error: 'Email already registered',
+          message: 'This email is already registered using Google Sign-In. Please use Google to login.',
+          authProvider: 'google'
+        });
+      }
+      
+      if (existingUser.authProvider === 'firebase' || existingUser.authProvider === 'phone') {
+        return res.status(400).json({
+          success: false,
+          error: 'Email already registered',
+          message: 'This email is already registered using Phone Authentication. Please use phone login.',
+          authProvider: existingUser.authProvider
+        });
+      }
+      
       return res.status(400).json({
         success: false,
-        error: 'User already exists with this email address'
+        error: 'Email already registered',
+        message: 'An account with this email already exists. Please login instead.'
       });
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // Create user
+    // Create new user
     const user = new User({
       name: name.trim(),
       email: normalizedEmail,
-      password: hashedPassword
+      password, // Will be hashed by pre-save middleware
+      authProvider: 'local',
+      isActive: true,
+      isEmailVerified: false
     });
 
     await user.save();
-    console.log('User created successfully:', normalizedEmail);
 
     // Generate token
     const token = generateToken(user._id);
 
+    // Return success response
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Registration successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt
-      }
+      user: user.toSafeObject()
     });
+
   } catch (error) {
-    console.error('Register error:', error);
+    console.error('Registration error:', error);
     
-    // Handle specific MongoDB duplicate key error
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        error: 'User already exists with this email address'
-      });
-    }
-    
-    // Handle validation errors
+    // Handle mongoose validation errors
     if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map(err => err.message);
+      const messages = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        details: validationErrors
+        messages
+      });
+    }
+
+    // Handle duplicate key error (shouldn't happen due to check above, but just in case)
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        success: false,
+        error: 'Duplicate entry',
+        message: `${field === 'email' ? 'Email' : field} already exists`
       });
     }
 
     res.status(500).json({
       success: false,
-      error: 'Registration failed. Please try again.',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: 'Server error',
+      message: 'Failed to register user. Please try again.'
     });
   }
 };
 
+// Login user with email/password
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Input validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email and password are required'
-      });
-    }
-
+    // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Find user
+    // Find user by email and include password field
     const user = await User.findOne({ email: normalizedEmail }).select('+password');
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid email or password'
+        error: 'Invalid credentials',
+        message: 'Invalid email or password'
       });
     }
 
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
+    // Check if user is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        error: 'Account deactivated',
+        message: 'Your account has been deactivated. Please contact support.'
+      });
+    }
+
+    // Check if user registered with email/password
+    if (user.authProvider === 'google') {
+      return res.status(400).json({
+        success: false,
+        error: 'Wrong authentication method',
+        message: 'This account was registered using Google Sign-In. Please use Google to login.',
+        authProvider: 'google'
+      });
+    }
+
+    if (user.authProvider === 'firebase' || user.authProvider === 'phone') {
+      return res.status(400).json({
+        success: false,
+        error: 'Wrong authentication method',
+        message: 'This account was registered using Phone Authentication. Please use phone login.',
+        authProvider: user.authProvider
+      });
+    }
+
+    // Verify password exists (for users who might have been migrated)
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        error: 'No password set',
+        message: 'This account does not have a password. Please use the authentication method you originally registered with.'
+      });
+    }
+
+    // Compare password using the model method
+    const isPasswordValid = await user.comparePassword(password);
+    
+    if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid email or password'
+        error: 'Invalid credentials',
+        message: 'Invalid email or password'
       });
     }
 
@@ -134,138 +167,83 @@ const login = async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
+    // Return success response
     res.json({
       success: true,
       message: 'Login successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        lastLogin: user.lastLogin
-      }
+      user: user.toSafeObject()
     });
+
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      error: 'Login failed. Please try again.',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: 'Server error',
+      message: 'Failed to login. Please try again.'
     });
   }
 };
 
-// NEW: Mobile-specific Google Auth endpoint
-// For React Native or mobile apps that handle Google Sign-In on client side
+// Google OAuth Mobile endpoint
 const googleAuthMobile = async (req, res) => {
   try {
-    const { googleId, email, name, displayName, photo, idToken } = req.body;
+    const { idToken, email, name, photo, googleId } = req.body;
 
-    console.log('=== Mobile Google Auth ===');
-    console.log('Google ID:', googleId);
-    console.log('Email:', email);
-
-    // Input validation
-    if (!googleId) {
+    if (!email || !googleId) {
       return res.status(400).json({
         success: false,
-        error: 'Google ID is required'
+        error: 'Missing required fields',
+        message: 'Email and Google ID are required'
       });
     }
 
-    // Optional: Verify idToken with Google (recommended for production)
-    // Uncomment if you want to verify the token
-    /*
-    if (idToken) {
-      const { OAuth2Client } = require('google-auth-library');
-      const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-      
-      try {
-        const ticket = await client.verifyIdToken({
-          idToken: idToken,
-          audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        
-        // Verify the googleId matches
-        if (payload.sub !== googleId) {
-          return res.status(401).json({
-            success: false,
-            error: 'Token verification failed'
-          });
-        }
-      } catch (verifyError) {
-        console.error('Token verification error:', verifyError);
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid token'
-        });
-      }
-    }
-    */
+    const normalizedEmail = email.toLowerCase().trim();
 
-    const normalizedEmail = email ? email.toLowerCase().trim() : null;
-
-    // Try to find user by googleId first
-    let user = await User.findOne({ googleId });
+    // Find or create user
+    let user = await User.findOne({ 
+      $or: [
+        { email: normalizedEmail },
+        { googleId }
+      ]
+    });
 
     if (user) {
-      // User exists, update last login and return
-      console.log('Existing Google user found:', user.email);
-      user.lastLogin = new Date();
-      
-      // Update profile info if changed
-      if (displayName && user.displayName !== displayName) {
-        user.displayName = displayName;
+      // Update existing user
+      if (!user.googleId && googleId) {
+        user.googleId = googleId;
       }
-      if (photo && user.photo !== photo) {
+      
+      if (photo && !user.photo) {
         user.photo = photo;
       }
       
+      if (!user.displayName && name) {
+        user.displayName = name;
+      }
+      
+      // Update auth provider if user was registered with email/password
+      if (user.authProvider === 'local' && user.googleId) {
+        user.authProvider = 'google';
+      }
+      
+      user.isEmailVerified = true;
+      user.lastLogin = new Date();
       await user.save();
     } else {
-      // User doesn't exist by googleId, check if email exists
-      if (normalizedEmail) {
-        user = await User.findOne({ email: normalizedEmail });
-        
-        if (user) {
-          // Link Google account to existing user
-          console.log('Linking Google account to existing user:', normalizedEmail);
-          user.googleId = googleId;
-          user.displayName = displayName || user.displayName;
-          user.photo = photo || user.photo;
-          user.lastLogin = new Date();
-          await user.save();
-        } else {
-          // Create new user with email
-          console.log('Creating new Google user with email:', normalizedEmail);
-          user = new User({
-            googleId,
-            email: normalizedEmail,
-            name: name || displayName || 'Google User',
-            displayName,
-            photo,
-            lastLogin: new Date(),
-            authProvider: 'google'
-          });
-          
-          await user.save();
-        }
-      } else {
-        // No email provided, create user with only googleId
-        console.log('Creating new Google user without email');
-        user = new User({
-          googleId,
-          name: name || displayName || 'Google User',
-          displayName,
-          photo,
-          lastLogin: new Date(),
-          authProvider: 'google'
-        });
-        
-        await user.save();
-      }
+      // Create new user
+      user = new User({
+        name: name || normalizedEmail.split('@')[0],
+        email: normalizedEmail,
+        googleId,
+        photo,
+        displayName: name,
+        authProvider: 'google',
+        isActive: true,
+        isEmailVerified: true,
+        lastLogin: new Date()
+      });
+      await user.save();
     }
 
     // Generate token
@@ -275,50 +253,29 @@ const googleAuthMobile = async (req, res) => {
       success: true,
       message: 'Google authentication successful',
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        displayName: user.displayName,
-        photo: user.photo,
-        role: user.role,
-        lastLogin: user.lastLogin
-      }
+      user: user.toSafeObject()
     });
+
   } catch (error) {
-    console.error('Mobile Google auth error:', error);
+    console.error('Google mobile auth error:', error);
     
-    // Handle duplicate key error
     if (error.code === 11000) {
-      if (error.keyPattern && error.keyPattern.email) {
-        return res.status(400).json({
-          success: false,
-          error: 'An account with this email already exists'
-        });
-      } else if (error.keyPattern && error.keyPattern.googleId) {
-        return res.status(400).json({
-          success: false,
-          error: 'This Google account is already registered'
-        });
-      }
-      
       return res.status(400).json({
         success: false,
-        error: 'Account linking failed'
+        error: 'Account conflict',
+        message: 'An account with this email or Google ID already exists'
       });
     }
     
     res.status(500).json({
       success: false,
-      error: 'Google authentication failed. Please try again.',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: 'Authentication failed',
+      message: 'Failed to authenticate with Google'
     });
   }
 };
 
-// Keep the original googleAuth for backward compatibility
-const googleAuth = googleAuthMobile;
-
+// Get user profile
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -330,56 +287,39 @@ const getProfile = async (req, res) => {
       });
     }
 
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        error: 'Account deactivated'
+      });
+    }
+
     res.json({
       success: true,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        displayName: user.displayName,
-        photo: user.photo,
-        role: user.role,
-        createdAt: user.createdAt,
-        lastLogin: user.lastLogin
-      }
+      user: user.getPublicProfile()
     });
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch profile',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: 'Failed to fetch profile'
     });
   }
 };
 
+// Update user profile
 const updateProfile = async (req, res) => {
   try {
-    const { name, email } = req.body;
-    const userId = req.user.id;
-
-    // Check if email is already taken by another user
-    if (email) {
-      const normalizedEmail = email.toLowerCase().trim();
-      const existingUser = await User.findOne({ 
-        email: normalizedEmail,
-        _id: { $ne: userId }
-      });
-      
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          error: 'Email is already taken by another user'
-        });
-      }
-    }
-
+    const { name, displayName, bio, photo } = req.body;
+    
     const updateData = {};
-    if (name) updateData.name = name.trim();
-    if (email) updateData.email = email.toLowerCase().trim();
+    if (name !== undefined) updateData.name = name.trim();
+    if (displayName !== undefined) updateData.displayName = displayName.trim();
+    if (bio !== undefined) updateData.bio = bio.trim();
+    if (photo !== undefined) updateData.photo = photo;
 
     const user = await User.findByIdAndUpdate(
-      userId,
+      req.user.id,
       updateData,
       { new: true, runValidators: true }
     );
@@ -394,28 +334,23 @@ const updateProfile = async (req, res) => {
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
+      user: user.getPublicProfile()
     });
   } catch (error) {
     console.error('Update profile error:', error);
     
-    // Handle duplicate key error
-    if (error.code === 11000) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
       return res.status(400).json({
         success: false,
-        error: 'Email is already taken by another user'
+        error: 'Validation failed',
+        messages
       });
     }
-    
+
     res.status(500).json({
       success: false,
-      error: 'Failed to update profile',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error: 'Failed to update profile'
     });
   }
 };
@@ -423,8 +358,7 @@ const updateProfile = async (req, res) => {
 module.exports = {
   register,
   login,
-  googleAuth,
-  googleAuthMobile, // Export mobile-specific endpoint
+  googleAuthMobile,
   getProfile,
   updateProfile
 };
