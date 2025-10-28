@@ -1,4 +1,3 @@
-// models/user.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -9,7 +8,7 @@ const userSchema = new mongoose.Schema({
     minlength: [2, 'Name must be at least 2 characters'],
     maxlength: [50, 'Name cannot exceed 50 characters'],
     required: function () {
-      return !this.googleId && !this.phoneNumber;
+      return !this.googleId && !this.phoneNumber && !this.firebaseUid;
     }
   },
   email: {
@@ -17,20 +16,21 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true,
     sparse: true, // Allow null values but enforce uniqueness when present
+    unique: true, // Add unique constraint
     match: [
       /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
       'Please enter a valid email address'
     ],
     required: function () {
-      return !this.googleId && !this.phoneNumber;
+      return this.authProvider === 'local' || (this.authProvider === 'google' && !this.googleId);
     }
   },
   password: {
     type: String,
     minlength: [6, 'Password must be at least 6 characters'],
-    select: false,
+    select: false, // Don't return password by default
     required: function () {
-      return !this.googleId && !this.phoneNumber;
+      return this.authProvider === 'local';
     }
   },
   phoneNumber: {
@@ -66,14 +66,18 @@ const userSchema = new mongoose.Schema({
   picture: String, // For Google OAuth
   avatar: String,
   profilePicture: String,
+  bio: {
+    type: String,
+    maxlength: [500, 'Bio cannot exceed 500 characters']
+  },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'moderator'],
     default: 'user'
   },
   authProvider: {
     type: String,
-    enum: ['local', 'google', 'phone', 'firebase'],
+    enum: ['local', 'google', 'phone', 'firebase', 'email'],
     default: 'local'
   },
   isActive: {
@@ -88,12 +92,14 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for sorting by recent users and faster queries
+// Indexes for faster queries
 userSchema.index({ createdAt: -1 });
 userSchema.index({ email: 1 });
 userSchema.index({ phoneNumber: 1 });
 userSchema.index({ googleId: 1 });
 userSchema.index({ firebaseUid: 1 });
+userSchema.index({ authProvider: 1 });
+userSchema.index({ isActive: 1 });
 
 // Ensure at least one authentication method is present
 userSchema.pre('validate', function(next) {
@@ -106,12 +112,13 @@ userSchema.pre('validate', function(next) {
 
 // Hash password before saving (only if password is provided and modified)
 userSchema.pre('save', async function(next) {
+  // Skip if password is not modified or not present
   if (!this.isModified('password') || !this.password) {
     return next();
   }
   
   try {
-    const salt = await bcrypt.genSalt(12);
+    const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
@@ -124,13 +131,19 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   if (!this.password) {
     return false;
   }
-  return await bcrypt.compare(candidatePassword, this.password);
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
 };
 
-// Override toJSON to exclude password
+// Override toJSON to exclude password and sensitive fields
 userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
+  delete user.__v;
   return user;
 };
 
@@ -144,12 +157,12 @@ userSchema.methods.getPublicProfile = function() {
     role: this.role,
     photo: this.photo || this.picture || this.avatar || this.profilePicture,
     displayName: this.displayName,
+    bio: this.bio,
     isPhoneVerified: this.isPhoneVerified,
     isEmailVerified: this.isEmailVerified,
     isActive: this.isActive,
     lastLogin: this.lastLogin,
     createdAt: this.createdAt,
-    firebaseUid: this.firebaseUid,
     authProvider: this.authProvider
   };
 };
@@ -160,6 +173,7 @@ userSchema.methods.toSafeObject = function() {
     id: this._id,
     name: this.name,
     email: this.email,
+    phoneNumber: this.phoneNumber,
     displayName: this.displayName,
     photo: this.photo || this.picture || this.avatar || this.profilePicture,
     role: this.role,
@@ -173,13 +187,15 @@ userSchema.methods.toSafeObject = function() {
 
 // Static method to find user by email or phone
 userSchema.statics.findByEmailOrPhone = async function(identifier) {
+  if (!identifier) return null;
+  
   const isEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(identifier);
   const isPhone = /^\+[1-9]\d{1,14}$/.test(identifier);
   
   if (isEmail) {
     return await this.findOne({ email: identifier.toLowerCase().trim() });
   } else if (isPhone) {
-    return await this.findOne({ phoneNumber: identifier });
+    return await this.findOne({ phoneNumber: identifier.trim() });
   }
   
   return null;
@@ -204,19 +220,26 @@ userSchema.statics.findByEmailOrGoogleId = async function(email, googleId) {
 
 // Static method to find user by Firebase UID
 userSchema.statics.findByFirebaseUid = async function(firebaseUid) {
+  if (!firebaseUid) return null;
   return await this.findOne({ firebaseUid });
 };
 
 // Static method to find or create user from Firebase auth
 userSchema.statics.findOrCreateFromFirebase = async function(firebaseData) {
-  const { uid, phoneNumber, displayName } = firebaseData;
+  const { uid, phoneNumber, displayName, email } = firebaseData;
+  
+  if (!uid) {
+    throw new Error('Firebase UID is required');
+  }
   
   // Try to find existing user by Firebase UID
   let user = await this.findOne({ firebaseUid: uid });
   
   if (user) {
-    // Update last login
+    // Update last login and verification status
     user.lastLogin = new Date();
+    if (phoneNumber) user.isPhoneVerified = true;
+    if (email) user.isEmailVerified = true;
     await user.save();
     return { user, isNewUser: false };
   }
@@ -229,7 +252,30 @@ userSchema.statics.findOrCreateFromFirebase = async function(firebaseData) {
       // Link Firebase UID to existing user
       user.firebaseUid = uid;
       user.isPhoneVerified = true;
-      user.authProvider = 'firebase';
+      if (user.authProvider === 'local' || user.authProvider === 'phone') {
+        user.authProvider = 'firebase';
+      }
+      user.lastLogin = new Date();
+      await user.save();
+      return { user, isNewUser: false };
+    }
+  }
+  
+  // Try to find by email (in case user registered via email before Firebase)
+  if (email) {
+    user = await this.findOne({ email: email.toLowerCase().trim() });
+    
+    if (user) {
+      // Link Firebase UID to existing user
+      user.firebaseUid = uid;
+      user.isEmailVerified = true;
+      if (phoneNumber) {
+        user.phoneNumber = phoneNumber;
+        user.isPhoneVerified = true;
+      }
+      if (user.authProvider === 'local') {
+        user.authProvider = 'firebase';
+      }
       user.lastLogin = new Date();
       await user.save();
       return { user, isNewUser: false };
@@ -237,19 +283,31 @@ userSchema.statics.findOrCreateFromFirebase = async function(firebaseData) {
   }
   
   // Create new user
-  const userName = displayName || `User_${phoneNumber?.slice(-4) || 'New'}`;
+  const userName = displayName || 
+                   (email ? email.split('@')[0] : null) ||
+                   (phoneNumber ? `User_${phoneNumber.slice(-4)}` : 'New User');
   
-  user = new this({
-    phoneNumber,
+  const userData = {
+    firebaseUid: uid,
     name: userName,
     displayName: displayName || userName,
-    firebaseUid: uid,
-    isPhoneVerified: true,
     authProvider: 'firebase',
     lastLogin: new Date()
-  });
+  };
   
+  if (phoneNumber) {
+    userData.phoneNumber = phoneNumber;
+    userData.isPhoneVerified = true;
+  }
+  
+  if (email) {
+    userData.email = email.toLowerCase().trim();
+    userData.isEmailVerified = true;
+  }
+  
+  user = new this(userData);
   await user.save();
+  
   return { user, isNewUser: true };
 };
 
@@ -264,4 +322,28 @@ userSchema.methods.updateLastLogin = async function() {
   return await this.save();
 };
 
-module.exports = mongoose.models.User || mongoose.model("User", userSchema);
+// Method to check if user can login with email/password
+userSchema.methods.canLoginWithPassword = function() {
+  return this.authProvider === 'local' && this.hasPassword();
+};
+
+// Method to get primary photo URL
+userSchema.methods.getPhotoUrl = function() {
+  return this.photo || this.picture || this.avatar || this.profilePicture || null;
+};
+
+// Static method to check if email exists
+userSchema.statics.emailExists = async function(email) {
+  if (!email) return false;
+  const user = await this.findOne({ email: email.toLowerCase().trim() });
+  return !!user;
+};
+
+// Static method to check if phone exists
+userSchema.statics.phoneExists = async function(phoneNumber) {
+  if (!phoneNumber) return false;
+  const user = await this.findOne({ phoneNumber: phoneNumber.trim() });
+  return !!user;
+};
+
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);
