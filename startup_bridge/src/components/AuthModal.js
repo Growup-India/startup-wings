@@ -273,21 +273,13 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     });
   };
 
-  // // FIXED: Google Auth handler with proper URL
-  // const handleGoogleAuth = () => {
-  //   console.log('Initiating Google OAuth...');
-  //   // FIXED: Use full backend URL
-  //   const backendUrl = process.env.REACT_APP_API_URL || 'https://startupwing.in/api';
-  //   window.location.href = `${backendUrl}/auth/google`;
-  // };
+  // FIXED: Google Auth handler with proper URL
   const handleGoogleAuth = () => {
-  console.log("Initiating Google OAuth...");
-  
-  const backendUrl = (process.env.REACT_APP_API_URL || "https://startupwing.in")
-    .replace(/\/+$/, "");  // remove trailing slash
-  
-  window.location.href = `${backendUrl}/api/auth/google`;  
-};
+    console.log('Initiating Google OAuth...');
+    // FIXED: Use full backend URL
+    const backendUrl = process.env.REACT_APP_API_URL || 'https://startupwing.in';
+    window.location.href = `${backendUrl}/api/auth/google`;
+  };
 
   const handleResendOTP = async () => {
     setLoading(true);
