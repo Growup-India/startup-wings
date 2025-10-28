@@ -46,7 +46,7 @@ router.get('/google/callback',
     
     // Handle user cancellation or errors
     if (req.query.error) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://startupwing.in';
       console.log('OAuth error, redirecting to:', `${frontendUrl}?error=${req.query.error}`);
       return res.redirect(`${frontendUrl}?error=${encodeURIComponent(req.query.error)}`);
     }
@@ -54,7 +54,7 @@ router.get('/google/callback',
     next();
   },
   passport.authenticate('google', { 
-    failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}?error=auth_failed`,
+    failureRedirect: `${process.env.FRONTEND_URL || 'https://startupwing.in'}?error=auth_failed`,
     session: false 
   }),
   (req, res) => {
@@ -73,7 +73,7 @@ router.get('/google/callback',
         role: req.user.role
       };
       
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://startupwing.in';
       
       // Detect if request is from mobile
       const userAgent = req.headers['user-agent'] || '';
@@ -89,7 +89,7 @@ router.get('/google/callback',
       res.redirect(redirectUrl);
     } catch (error) {
       console.error('OAuth callback error:', error);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://startupwing.in';
       res.redirect(`${frontendUrl}?error=auth_processing_failed`);
     }
   }

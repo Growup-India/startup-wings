@@ -1,6 +1,6 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "Startup Wings",
+  "short_name": "Startup Wings",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

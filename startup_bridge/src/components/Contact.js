@@ -16,7 +16,7 @@ const Contact = () => {
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  const API_BASE_URL = "https://startup-wings-b.onrender.com/api";
+  const API_BASE_URL = "https://startupwing.in/api";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

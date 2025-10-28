@@ -20,7 +20,7 @@ passport.deserializeUser(async (id, done) => {
 const getCallbackURL = () => {
   if (process.env.NODE_ENV === 'production') {
     // Production URL - Replace with your actual domain
-    return `${process.env.BACKEND_URL || 'https://your-backend-domain.com'}/auth/google/callback`;
+    return `${process.env.BACKEND_URL || 'https://startupwing.in'}/auth/google/callback`;
   }
   // Development URL
   return 'http://localhost:5000/auth/google/callback';

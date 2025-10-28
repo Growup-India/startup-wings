@@ -140,7 +140,7 @@ app.get("/auth/google", passport.authenticate("google", {
 
 app.get("/auth/google/callback",
   passport.authenticate("google", {
-    failureRedirect: `${process.env.FRONTEND_URL || "http://localhost:3000"}?error=auth_failed`,
+    failureRedirect: `${process.env.FRONTEND_URL || "https://startupwing.in"}?error=auth_failed`,
     session: false
   }),
   (req, res) => {
@@ -159,11 +159,11 @@ app.get("/auth/google/callback",
       };
       
       // Redirect to frontend with token and user data
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+      const frontendUrl = process.env.FRONTEND_URL || "https://startupwing.in";
       res.redirect(`${frontendUrl}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`);
     } catch (error) {
       console.error('OAuth callback error:', error);
-      res.redirect(`${process.env.FRONTEND_URL || "http://localhost:3000"}?error=auth_failed`);
+      res.redirect(`${process.env.FRONTEND_URL || "https://startupwing.in"}?error=auth_failed`);
     }
   }
 );
@@ -290,7 +290,7 @@ app.listen(PORT, () => {
   console.log('═══════════════════════════════════════════════════');
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'https://startupwing.in'}`);
   console.log(`Database: ${process.env.MONGODB_URI ? 'Remote MongoDB' : 'Local MongoDB'}`);
   
   // Check Firebase configuration

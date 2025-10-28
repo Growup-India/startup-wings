@@ -24,7 +24,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     otp: "",
   });
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "https://startupwing.in";
 
   // Setup reCAPTCHA
   useEffect(() => {
@@ -273,13 +273,21 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     });
   };
 
-  // FIXED: Google Auth handler with proper URL
+  // // FIXED: Google Auth handler with proper URL
+  // const handleGoogleAuth = () => {
+  //   console.log('Initiating Google OAuth...');
+  //   // FIXED: Use full backend URL
+  //   const backendUrl = process.env.REACT_APP_API_URL || 'https://startupwing.in/api';
+  //   window.location.href = `${backendUrl}/auth/google`;
+  // };
   const handleGoogleAuth = () => {
-    console.log('Initiating Google OAuth...');
-    // FIXED: Use full backend URL
-    const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    window.location.href = `${backendUrl}/auth/google`;
-  };
+  console.log("Initiating Google OAuth...");
+  
+  const backendUrl = (process.env.REACT_APP_API_URL || "https://startupwing.in")
+    .replace(/\/+$/, "");  // remove trailing slash
+  
+  window.location.href = `${backendUrl}/api/auth/google`;  
+};
 
   const handleResendOTP = async () => {
     setLoading(true);
