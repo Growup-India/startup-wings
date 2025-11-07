@@ -7,7 +7,7 @@ const generateToken = (userId) => {
   };
 
   const options = {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d', // Token expires in 7 days by default
+    expiresIn: '1h' // Token expires in 1 hour
   };
 
   const secret = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';

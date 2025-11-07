@@ -280,21 +280,21 @@ const Homepage = ({ onLogin, user, onLogout }) => {
           <div className="hero-content">
             <div className="hero-text">
               <h1 className="hero-title">
-                Skip the <span className="gradient-text">Guesswork.</span>
+                Turn Your <span className="gradient-text">Idea</span>
                 <br />
-                Build Your Startup <span className="gradient-text">Smarter.</span>
+                into <span className="gradient-text">a Successful Startup.</span>
               </h1>
               <p className="hero-subtitle">
-                The guided platform that helps founders validate ideas, research markets, and launch with confidence.
+                The guided platform that helps founders validate ideas, research markets, and launch with confidence — so you can build faster and avoid costly mistakes.
               </p>
               {loggedInUser ? (
                 <button className="hero-cta" onClick={handleDashboardClick}>
-                  Go to Dashboard
+                  Get Started
                   <ArrowRight className="arrow-icon" size={20} />
                 </button>
               ) : (
                 <button className="hero-cta" onClick={() => setIsAuthOpen(true)}>
-                  Start Validating Your Idea
+                  Get Started
                   <ArrowRight className="arrow-icon" size={20} />
                 </button>
               )}
@@ -351,23 +351,29 @@ const Homepage = ({ onLogin, user, onLogout }) => {
               <div className="pain-points">
                 <div className="pain-point">
                   <div className="bullet"></div>
-                  <span>"Is my idea really solving a problem?"</span>
+                  <span><b>Starting up shouldn't feel like guessing.</b><br/>
+                   But most founders struggle with the same roadblocks
+                  </span>
                 </div>
                 <div className="pain-point">
                   <div className="bullet"></div>
-                  <span>"Where do I even start my journey?"</span>
+                  <span><b> Wasted Time & Effort.</b><br/>
+                   Spending months figuring out what to do next — with no clear direction.</span>
                 </div>
                 <div className="pain-point">
                   <div className="bullet"></div>
-                  <span>"How do I avoid legal & costly mistakes?"</span>
+                  <span><b>Limited Budget & Wrong Hires.</b><br/>
+                  Losing money on unverified developers, designers, and marketing agencies.</span>
                 </div>
                 <div className="pain-point">
                   <div className="bullet"></div>
-                  <span>"How can I raise my first round of funding or grants?"</span>
+                  <span><b>No Clear Guidance.</b><br/>
+                  Uncertain how to validate ideas, build MVPs, or reach early customers.</span>
                 </div>
                 <div className="pain-point">
                   <div className="bullet"></div>
-                  <span>"How do I build an MVP without burning all my savings?"</span>
+                  <span><b>Funding Frustration.</b><br/>
+                   No roadmap for grants, investor connects, or pitch readiness.</span>
                 </div>
               </div>
             </div>
@@ -377,12 +383,34 @@ const Homepage = ({ onLogin, user, onLogout }) => {
                 <Lightbulb className="card-icon" size={28} />
                 Our Solution
               </h3>
-              <p className="solution-text">
-               At Startup Wing, we simplify the messy early-stage journey. From idea validation to launch roadmap — we give you tools, templates, mentors, and step-by-step guidance.
-              We make starting up smarter, faster, and more affordable by cutting out trial-and-error.
-              With Startup Bridge, you don't just launch a startup—you launch with confidence. <span className="highlight">tools, templates, mentors, and step-by-step guidance.</span>
-
-              </p>
+              <div className="pain-points">
+                <div className="pain-point">
+                  <div className="bullet"></div>
+                  <span><b>Startup Wings simplifies your startup journey — helping founders save time, save money, and build smarter.</b><br/>
+                  No more guesswork — just clear steps, expert help, and growth-focused tools.
+                  </span>
+                </div>
+                <div className="pain-point">
+                  <div className="bullet"></div>
+                  <span><b>Save Time</b><br/>
+                  Structured roadmap and guided workflows show what to do next — cutting months of trial and error.</span>
+                </div>
+                <div className="pain-point">
+                  <div className="bullet"></div>
+                  <span><b>Save Money</b><br/>
+                   Access verified experts, templates, and affordable tools — avoiding costly mistakes.</span>
+                </div>
+                <div className="pain-point">
+                  <div className="bullet"></div>
+                  <span><b>Build Smarter.</b><br/>
+                  Validate ideas, research markets, and prepare investor-ready plans with expert-backed frameworks.</span>
+                </div>
+                <div className="pain-point">
+                  <div className="bullet"></div>
+                  <span><b> Get Funding-Ready</b><br/>
+                   Create powerful pitch decks, apply for grants, and connect with investors or government programs.</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -393,26 +421,26 @@ const Homepage = ({ onLogin, user, onLogout }) => {
         <div className="container">
           <div className="section-header">
             <h2 className="section-title">How It Works</h2>
-            <p className="section-subtitle">3 Simple Steps to Success</p>
+            <p className="section-subtitle">Your Startup Journey in 3 Guided Steps</p>
           </div>
 
           <div className="steps-grid">
             <div className="step">
               <div className="step-number step-1">1</div>
               <h3 className="step-title">Validate Your Idea</h3>
-              <p className="step-description">Use our checklist & toolkit to prove your idea solves a real problem.</p>
+              <p className="step-description">Turn your concept into a solid startup idea using our guided validation tools.</p>
             </div>
 
             <div className="step">
               <div className="step-number step-2">2</div>
               <h3 className="step-title">Research & Plan</h3>
-              <p className="step-description">Map your market, study competitors, and find your edge.</p>
+              <p className="step-description">Discover your market, analyze competitors, and build a winning strategy.</p>
             </div>
 
             <div className="step">
               <div className="step-number step-3">3</div>
               <h3 className="step-title">Launch with Confidence</h3>
-              <p className="step-description">Follow our roadmap, connect to mentors, and access grants.</p>
+              <p className="step-description"> Follow your step-by-step roadmap, connect with mentors, and unlock startup grants.</p>
             </div>
           </div>
         </div>

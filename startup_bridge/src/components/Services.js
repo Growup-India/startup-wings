@@ -13,7 +13,7 @@ const services = [
     short:
       "Business registration, GST/PAN/trademark, legal templates, ongoing compliance.",
     detailed:
-      "Complete business setup from incorporation to compliance. We handle all legal paperwork, registrations, and ongoing regulatory requirements so you can focus on building your business.",
+      " We simplify business registration, GST/PAN/trademark filings, and legal documentation — all in one place. From company incorporation to ongoing compliance, Startup Wings ensures your startup stays fully registered, protected, and audit-ready.",
     features: [
       "Business Registration & Incorporation",
       "GST Registration & Returns",
@@ -28,7 +28,7 @@ const services = [
     short:
       "No-code websites, domain & hosting, branding, MVP prototyping with no/low-code.",
     detailed:
-      "Build your digital presence with modern no-code solutions. From professional websites to MVP development, we help you establish a strong online foundation.",
+      "Get a no-code or low-code website, secure domain & hosting, professional branding, and MVP development — all managed by experts. We help startups go online fast, affordably, and ready to scale.",
     features: [
       "Web Development",
       "Brand Identity & Logo Design",
@@ -44,7 +44,7 @@ const services = [
     short:
       "Social media starter, SEO & ads strategy, pitch decks and PR kit for founders.",
     detailed:
-      "Accelerate your growth with strategic marketing solutions. From social media presence to investor-ready pitch decks, we help you tell your story effectively.",
+      "We design data-driven marketing strategies that include SEO, social media, paid ads, and PR campaigns — crafted to help early-stage startups grow visibility, traction, and trust.",
     features: [
       "Social Media Strategy & Setup",
       "SEO & Content Strategy",
@@ -60,7 +60,7 @@ const services = [
     short:
       "Pitch deck review, financial projections, mock investor sessions, introductions.",
     detailed:
-      "Get investment-ready with comprehensive funding support. From pitch refinement to investor connections, we guide you through the entire fundraising process.",
+      " From pitch deck design and financial modeling to mock investor sessions and introductions — we make your startup investor-ready. Our team helps you secure grants, angel, or VC funding faster.",
     features: [
       "Pitch Deck Review & Enhancement",
       "Financial Model & Projections",
@@ -77,7 +77,7 @@ const services = [
     short:
       "1:1 mentorship, startup credits/tools, founder community & accelerator guidance.",
     detailed:
-      "Access expert mentorship and startup ecosystem benefits. Join our founder community and get guidance from experienced entrepreneurs and industry experts.",
+      "Access 1:1 mentorship, accelerator resources, and exclusive founder communities. We connect you with the right mentors, tools, and ecosystem partners to accelerate your startup journey.",
     features: [
       "1:1 Mentorship Sessions",
       "Startup Credits & Tools Access",

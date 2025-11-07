@@ -1,42 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Essential Meta Tags -->
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="theme-color" content="#4f46e5" />
+    
+    <!-- Primary Meta Tags - SEO Critical -->
+    <title>Startup Wing - Transform Your Idea into a Successful Startup | Guided Platform for Founders</title>
+    <meta name="title" content="Startup Wing - Transform Your Idea into a Successful Startup" />
+    <meta name="description" content="Launch your startup with confidence using our guided platform. Get step-by-step validation, market research tools, mentorship, and funding opportunities. Trusted by 500+ founders across India." />
+    <meta name="keywords" content="startup platform, business validation, market research, startup funding, entrepreneurship, business registration, startup mentorship, MVP development, startup India, founder resources" />
+    <meta name="author" content="Startup Wing" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="distribution" content="global" />
+    <meta name="rating" content="general" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://startupwing.com/" />
+    
+    <!-- Open Graph / Facebook Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://startupwing.com/" />
+    <meta property="og:site_name" content="Startup Wing" />
+    <meta property="og:title" content="Startup Wing - Transform Your Idea into a Successful Startup" />
+    <meta property="og:description" content="Launch your startup with confidence. Validate ideas, research markets, and connect with mentors and investors. Join 500+ successful founders." />
+    <meta property="og:image" content="https://startupwing.com/og-image.jpg" />
+    <meta property="og:image:secure_url" content="https://startupwing.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Startup Wing - Platform for Entrepreneurs" />
+    <meta property="og:locale" content="en_IN" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://startupwing.com/" />
+    <meta name="twitter:title" content="Startup Wing - Transform Your Idea into a Successful Startup" />
+    <meta name="twitter:description" content="Launch your startup with confidence. Validate ideas, research markets, and connect with mentors and investors." />
+    <meta name="twitter:image" content="https://startupwing.com/twitter-image.jpg" />
+    <meta name="twitter:image:alt" content="Startup Wing Platform" />
+    <meta name="twitter:creator" content="@startupwing" />
+    <meta name="twitter:site" content="@startupwing" />
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Startup Wing" />
+    
+    <!-- Favicon and App Icons -->
+    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png" />
+    <link rel="mask-icon" href="%PUBLIC_URL%/safari-pinned-tab.svg" color="#4f46e5" />
+    
+    <!-- Web App Manifest -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
-
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>Startup Wings</title>
+    
+    <!-- Preconnect to External Domains for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+    
+    <!-- Structured Data - Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Startup Wing",
+      "alternateName": "StartupWing",
+      "url": "https://startupwing.com",
+      "logo": "https://startupwing.com/logo.png",
+      "description": "Guided platform helping founders validate ideas, research markets, and launch successful startups with confidence",
+      "foundingDate": "2024",
+      "foundingLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "IN"
+        }
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Service",
+        "email": "support@startupwing.com",
+        "availableLanguage": ["English", "Hindi"]
+      },
+      "sameAs": [
+        "https://www.linkedin.com/company/grow-up-india",
+        "https://www.instagram.com/startup.wings",
+        "https://www.facebook.com/startupwings"
+      ]
+    }
+    </script>
+    
+    <!-- Structured Data - WebSite Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Startup Wing",
+      "url": "https://startupwing.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://startupwing.com/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
+    <!-- Structured Data - Product/Service Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "Startup Wing Platform",
+      "description": "Comprehensive platform for startup founders offering validation tools, market research, mentorship, and funding connections",
+      "brand": {
+        "@type": "Brand",
+        "name": "Startup Wing"
+      },
+      "offers": {
+        "@type": "AggregateOffer",
+        "availability": "https://schema.org/InStock",
+        "priceCurrency": "INR"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "500"
+      }
+    }
+    </script>
+    
+    <!-- Breadcrumb Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://startupwing.com"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Features",
+          "item": "https://startupwing.com/features"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Services",
+          "item": "https://startupwing.com/services"
+        }
+      ]
+    }
+    </script>
+    
+    <!-- Google Analytics (Replace with your tracking ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX', {
+        'anonymize_ip': true,
+        'cookie_flags': 'SameSite=None;Secure'
+      });
+    </script>
+    
+    <!-- Performance Optimization -->
+    <link rel="preload" as="image" href="%PUBLIC_URL%/logo.png" />
+    
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <!-- Skip to Main Content Link for Accessibility -->
+    <a href="#main-content" class="skip-link" style="position: absolute; left: -9999px; z-index: 999; padding: 1em; background-color: #4f46e5; color: white; text-decoration: none;">
+      Skip to main content
+    </a>
+    
+    <!-- No JavaScript Fallback -->
+    <noscript>
+      <div style="text-align: center; padding: 2rem; background-color: #fef3c7; border: 2px solid #f59e0b;">
+        <h2>JavaScript Required</h2>
+        <p>You need to enable JavaScript to run this application. Please enable JavaScript in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
+    
+    <!-- Root Container -->
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+    
+    <!-- Browser Compatibility Warning (Optional) -->
+    <!--[if lt IE 11]>
+      <div style="text-align: center; padding: 2rem; background-color: #fee2e2;">
+        <p>You are using an outdated browser. Please upgrade your browser to improve your experience.</p>
+      </div>
+    <![endif]-->
+    
   </body>
 </html>
