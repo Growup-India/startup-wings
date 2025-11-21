@@ -1,40 +1,40 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import { User, Mail, Phone, Target, Megaphone, MessageSquare, Send } from 'lucide-react';
-import "./css/contact.css";
+import './css/contact.css';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-    referral: "",
-    service: "",
+    name: '',
+    email: '',
+    phone: '',
+    message: '',
+    referral: '',
+    service: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitError, setSubmitError] = useState("");
+  const [submitMessage, setSubmitMessage] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
-  const API_BASE_URL = "http://localhost:5000/api";
+  const API_BASE_URL = 'http://localhost:5000/api';
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setSubmitMessage("");
-    setSubmitError("");
+    setSubmitMessage('');
+    setSubmitError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setSubmitMessage("");
-    setSubmitError("");
+    setSubmitMessage('');
+    setSubmitError('');
 
     try {
       const response = await fetch(`${API_BASE_URL}/contact/submit`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
@@ -44,23 +44,23 @@ const Contact = () => {
       if (data.success) {
         setSubmitMessage(data.message);
         setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          message: "",
-          referral: "",
-          service: "",
+          name: '',
+          email: '',
+          phone: '',
+          message: '',
+          referral: '',
+          service: '',
         });
       } else {
-        setSubmitError(data.message || "Something went wrong. Please try again.");
+        setSubmitError(data.message || 'Something went wrong. Please try again.');
         if (data.errors && data.errors.length > 0) {
-          const errorMessages = data.errors.map(err => err.msg).join(', ');
+          const errorMessages = data.errors.map((err) => err.msg).join(', ');
           setSubmitError(errorMessages);
         }
       }
     } catch (error) {
-      console.error("Contact form error:", error);
-      setSubmitError("Network error. Please check your connection and try again.");
+      console.error('Contact form error:', error);
+      setSubmitError('Network error. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,23 +75,16 @@ const Contact = () => {
               Get in <span className="highlight-text">Touch</span>
             </h2>
             <p>
-              Have questions? We'd love to hear from you. Drop us a message and we'll get back to you soon.
+              Have questions? We'd love to hear from you. Drop us a message and we'll get back to
+              you soon.
             </p>
           </div>
 
           {/* Success Message */}
-          {submitMessage && (
-            <div className="success-message">
-              ✅ {submitMessage}
-            </div>
-          )}
+          {submitMessage && <div className="success-message">✅ {submitMessage}</div>}
 
           {/* Error Message */}
-          {submitError && (
-            <div className="error-message">
-              ❌ {submitError}
-            </div>
-          )}
+          {submitError && <div className="error-message">❌ {submitError}</div>}
 
           <form className="dashboard-form" onSubmit={handleSubmit}>
             <div className="form-grid">
@@ -159,11 +152,15 @@ const Contact = () => {
                   disabled={isSubmitting}
                 >
                   <option value="">Select a service</option>
-                  <option value="Business Registration & Incorporation">Business Registration & Incorporation</option>
+                  <option value="Business Registration & Incorporation">
+                    Business Registration & Incorporation
+                  </option>
                   <option value="GST Registration & Returns">GST Registration & Returns</option>
                   <option value="No-Code Website Development">No-Code Website Development</option>
                   <option value="SEO Optimization">SEO Optimization</option>
-                  <option value="Investor Network Introductions">Investor Network Introductions</option>
+                  <option value="Investor Network Introductions">
+                    Investor Network Introductions
+                  </option>
                   <option value="1:1 Mentorship Sessions">1:1 Mentorship Sessions</option>
                 </select>
               </div>
@@ -207,11 +204,7 @@ const Contact = () => {
             </div>
 
             {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="save-btn"
-            >
+            <button type="submit" disabled={isSubmitting} className="save-btn">
               {isSubmitting ? (
                 <>
                   <div className="spinner"></div>

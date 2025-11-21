@@ -13,11 +13,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(8, 145, 178, 0.1) 0%, transparent 50%);
   pointer-events: none;
   animation: float 20s ease-in-out infinite;
+  z-index: 0;
 }
 
 /* Enhanced Navigation for About Page */
@@ -26,7 +27,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 100;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(148, 163, 184, 0.15);
@@ -139,6 +140,7 @@
 .about-preview {
   padding: 8rem 0 6rem;
   position: relative;
+  z-index: 1;
 }
 
 .about-preview::before {
@@ -150,6 +152,7 @@
   height: 300px;
   background: linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, transparent 100%);
   pointer-events: none;
+  z-index: -1;
 }
 
 .about-preview .container {
@@ -281,9 +284,15 @@
   animation: fadeInUp 0.6s ease-out forwards;
 }
 
-.about-description:nth-of-type(2) { animation-delay: 0.2s; }
-.about-description:nth-of-type(4) { animation-delay: 0.4s; }
-.about-description:nth-of-type(6) { animation-delay: 0.6s; }
+.about-description:nth-of-type(2) {
+  animation-delay: 0.2s;
+}
+.about-description:nth-of-type(4) {
+  animation-delay: 0.4s;
+}
+.about-description:nth-of-type(6) {
+  animation-delay: 0.6s;
+}
 
 .about-description:hover {
   border-left-color: #2563eb;
@@ -394,6 +403,7 @@
   padding: 4rem 0 2rem;
   position: relative;
   overflow: hidden;
+  z-index: 1;
 }
 
 .about-page .footer::before {
@@ -550,7 +560,8 @@
 
 /* Custom Animations */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   33% {
@@ -625,7 +636,8 @@
 
 /* Loading States */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -651,7 +663,7 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .subsection-title:hover,
   .about-description:hover,
   .link-button:hover {
@@ -666,15 +678,15 @@
     background: none;
     -webkit-text-fill-color: initial;
   }
-  
+
   .subsection-title {
     color: #000;
   }
-  
+
   .about-description {
     color: #333;
   }
-  
+
   .about-text {
     color: #333;
   }
@@ -687,11 +699,11 @@
   .link-button {
     display: none;
   }
-  
+
   .about-preview {
     padding: 2rem 0;
   }
-  
+
   .about-preview .section-title {
     color: #000;
     background: none;

@@ -1,68 +1,171 @@
 {
-  "name": "startup_bridge",
-  "version": "0.1.0",
+  "name": "startup-wing",
+  "version": "1.0.0",
+  "description": "Startup Wing - Guided platform helping founders validate ideas, research markets, and launch successful startups with confidence",
+  "author": "Startup Wing Team",
+  "license": "MIT",
   "private": true,
-  "dependencies": {
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.8.0",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
-    "bcryptjs": "^3.0.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
-    "firebase": "^12.4.0",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "lucide-react": "^0.543.0",
-    "mongodb": "^6.20.0",
-    "mongoose": "^8.18.2",
-    "moongoose": "^0.0.5",
-    "nodemailer": "^7.0.6",
-    "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-icons": "^5.5.0",
-    "react-router-dom": "^6.30.1",
-    "react-scripts": "5.0.1",
-    "validator": "^13.15.15",
-    "web-vitals": "^2.1.4"
+  "homepage": "https://startupwing.in",
+  "keywords": [
+    "startup",
+    "entrepreneurship",
+    "business validation",
+    "market research",
+    "mentorship",
+    "funding platform",
+    "MVP development",
+    "startup India"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/safal-890/startup-wing.git"
+  },
+  "bugs": {
+    "url": "https://github.com/safal-890/startup-wing/issues"
   },
   "scripts": {
     "start": "react-scripts start",
+    "dev": "react-scripts start",
     "build": "react-scripts build",
+    "build:prod": "GENERATE_SOURCEMAP=false react-scripts build",
+    "build:analyze": "npm run build && npm run analyze",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:ci": "CI=true react-scripts test --coverage",
+    "eject": "react-scripts eject",
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
+    "lint": "eslint src/**/*.{js,jsx}",
+    "lint:fix": "eslint src/**/*.{js,jsx} --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,json,css,md}\"",
+    "lighthouse": "lighthouse https://startupwing.in --view --output html --output-path ./reports/lighthouse-report.html",
+    "lighthouse:local": "lighthouse http://localhost:3000 --view --output html --output-path ./reports/lighthouse-local.html",
+    "sitemap": "node scripts/generate-sitemap.js",
+    "prebuild": "npm run lint:fix && npm run format",
+    "postbuild": "npm run sitemap",
+    "server": "node server/index.js",
+    "server:dev": "nodemon server/index.js",
+    "install:all": "npm install && cd server && npm install"
+  },
+  "dependencies": {
+    "firebase": "^10.14.0",
+    "lucide-react": "^0.543.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-helmet-async": "^2.0.4",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^6.30.1",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^3.5.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "eslint": "^8.57.1",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "jest": "^27.5.1",
+    "lighthouse": "^11.4.0",
+    "prettier": "^3.1.1",
+    "source-map-explorer": "^2.5.3",
+    "supertest": "^7.1.4",
+    "webpack-dev-server": "^3.11.3"
+  },
+  "optionalDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "no-console": [
+        "warn",
+        {
+          "allow": [
+            "warn",
+            "error"
+          ]
+        }
+      ],
+      "no-unused-vars": [
+        "warn",
+        {
+          "argsIgnorePattern": "^_"
+        }
+      ],
+      "react/prop-types": "off",
+      "react/react-in-jsx-scope": "off",
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn"
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "trailingComma": "es5",
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false,
+    "arrowParens": "always",
+    "endOfLine": "lf",
+    "bracketSpacing": true,
+    "jsxSingleQuote": false
   },
   "browserslist": {
     "production": [
       ">0.2%",
       "not dead",
-      "not op_mini all"
+      "not op_mini all",
+      "not ie 11",
+      "not chrome < 60",
+      "not safari < 11",
+      "not firefox < 60"
     ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
-      "last 1 safari version"
+      "last 1 safari version",
+      "last 1 edge version"
     ]
   },
-  "devDependencies": {
-    "eslint": "^8.57.1",
-    "jest": "^27.5.1",
-    "nodemon": "^3.1.10",
-    "supertest": "^7.1.4"
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   },
-  "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/reportWebVitals.js",
+      "!src/setupTests.js",
+      "!src/**/*.test.{js,jsx}",
+      "!src/**/__tests__/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    },
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.{js,jsx}",
+      "<rootDir>/src/**/*.{spec,test}.{js,jsx}"
+    ]
+  },
+  "proxy": "http://localhost:5000"
 }

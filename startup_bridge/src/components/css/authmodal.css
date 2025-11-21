@@ -46,7 +46,9 @@
   border-radius: 1.5rem;
   padding: 2rem;
   z-index: 1001;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2), 0 10px 25px rgba(37, 99, 235, 0.1);
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.2),
+    0 10px 25px rgba(37, 99, 235, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.3);
   animation: cardSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -86,7 +88,9 @@
 
 .auth-card:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2), 0 10px 20px rgba(37, 99, 235, 0.1);
+  box-shadow:
+    0 25px 50px rgba(0, 0, 0, 0.2),
+    0 10px 20px rgba(37, 99, 235, 0.1);
   border-color: rgba(37, 99, 235, 0.4);
 }
 
@@ -243,9 +247,9 @@
 /* CRITICAL: All input field transitions and animations REMOVED */
 .input-wrapper input,
 .form-group input,
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+input[type='text'],
+input[type='email'],
+input[type='password'] {
   width: 100% !important;
   padding: 1rem 3rem 1rem 4.5rem !important;
   border: 2px solid rgba(209, 213, 219, 0.8) !important;
@@ -255,7 +259,7 @@ input[type="password"] {
   backdrop-filter: blur(10px) !important;
   position: relative !important;
   z-index: 2 !important;
-  
+
   /* CRITICAL: Remove ALL transitions and animations */
   transition: none !important;
   animation: none !important;
@@ -273,15 +277,15 @@ input[type="password"] {
 .form-group input:hover,
 .form-group input:focus,
 .form-group input:active,
-input[type="text"]:hover,
-input[type="text"]:focus,
-input[type="text"]:active,
-input[type="email"]:hover,
-input[type="email"]:focus,
-input[type="email"]:active,
-input[type="password"]:hover,
-input[type="password"]:focus,
-input[type="password"]:active {
+input[type='text']:hover,
+input[type='text']:focus,
+input[type='text']:active,
+input[type='email']:hover,
+input[type='email']:focus,
+input[type='email']:active,
+input[type='password']:hover,
+input[type='password']:focus,
+input[type='password']:active {
   transition: none !important;
   animation: none !important;
   transform: none !important;
@@ -313,9 +317,11 @@ input::placeholder {
 .form-group input:focus {
   outline: none !important;
   border-color: #2563eb !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 10px 25px rgba(37, 99, 235, 0.1) !important;
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.1),
+    0 10px 25px rgba(37, 99, 235, 0.1) !important;
   background: rgba(255, 255, 255, 1) !important;
-  
+
   /* CRITICAL: No movement on focus */
   transform: none !important;
   transition: none !important;
@@ -399,8 +405,12 @@ input::placeholder {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .auth-btn:hover {
@@ -558,11 +568,11 @@ input::placeholder {
 
 /* Fixed keyframe to maintain center position during rotation */
 @keyframes spin {
-  from { 
-    transform: translate(-50%, -50%) rotate(0deg); 
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
   }
-  to { 
-    transform: translate(-50%, -50%) rotate(360deg); 
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 
@@ -591,9 +601,16 @@ input::placeholder {
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
 }
 
 /* Error message styling */
@@ -715,9 +732,9 @@ input::placeholder {
   /* CRITICAL: Mobile inputs - NO TRANSITIONS */
   .input-wrapper input,
   .form-group input,
-  input[type="text"],
-  input[type="email"],
-  input[type="password"] {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'] {
     padding: 0.875rem 2.5rem 0.875rem 4rem !important;
     font-size: 0.95rem !important;
     transition: none !important;
@@ -752,9 +769,9 @@ input::placeholder {
   /* CRITICAL: Small mobile inputs - NO TRANSITIONS */
   .input-wrapper input,
   .form-group input,
-  input[type="text"],
-  input[type="email"],
-  input[type="password"] {
+  input[type='text'],
+  input[type='email'],
+  input[type='password'] {
     padding: 0.75rem 2.25rem 0.75rem 3.75rem !important;
     transition: none !important;
     transform: none !important;
@@ -774,7 +791,7 @@ input::placeholder {
     align-items: flex-start;
     padding: 0.5rem;
   }
-  
+
   .auth-card {
     max-height: 95vh;
     margin-top: 0.5rem;
@@ -803,17 +820,17 @@ input::placeholder {
     border: 2px solid #1f2937;
     background: rgba(255, 255, 255, 1);
   }
-  
+
   .auth-header h2 {
     color: #000;
   }
-  
+
   .input-wrapper input,
   .form-group input {
     border: 2px solid #1f2937 !important;
     background: #fff !important;
   }
-  
+
   .auth-btn {
     background: #1f2937;
     border: 2px solid #000;
@@ -835,7 +852,7 @@ input::placeholder {
     animation: none !important;
     transform: none !important;
   }
-  
+
   .auth-card:hover,
   .auth-btn:hover,
   .input-wrapper:hover,

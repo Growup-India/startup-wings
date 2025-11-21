@@ -1,116 +1,208 @@
+// Routes/authroutes.js - Hardened: DB guards, exec(), safe selects
 const express = require('express');
-const passport = require('passport');
-const { generateToken } = require('../utils/generateToken');
-const { 
-  register, 
-  login,
-  googleAuthMobile, // Mobile endpoint
-  getProfile, 
-  updateProfile 
-} = require('../controllers/auth');
-const { verifyToken, validateRegister, validateLogin } = require('../middlewares/authmiddlewares');
-
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
+const User = require('../models/user');
+const { generateToken } = require('../utils/generateToken');
+const rateLimit = require('express-rate-limit');
 
-// Public routes
-router.post('/register', validateRegister, register);
-router.post('/login', validateLogin, login);
-
-// NEW: Mobile Google Auth endpoint (for React Native, Flutter, etc.)
-// Mobile apps handle Google Sign-In on client side and send the result to this endpoint
-router.post('/google/mobile', googleAuthMobile);
-
-// Web Google OAuth routes with improved error handling
-router.get('/google',
-  (req, res, next) => {
-    console.log('=== Google OAuth Initiated ===');
-    console.log('User Agent:', req.headers['user-agent']);
-    console.log('Origin:', req.headers.origin);
-    console.log('Referer:', req.headers.referer);
-    next();
-  },
-  passport.authenticate('google', { 
-    scope: ['profile', 'email'],
-    session: false,
-    accessType: 'offline',
-    prompt: 'consent'
-  })
-);
-
-router.get('/google/callback',
-  (req, res, next) => {
-    console.log('=== Google OAuth Callback Received ===');
-    console.log('Query params:', req.query);
-    console.log('Error param:', req.query.error);
-    console.log('Code present:', !!req.query.code);
-    
-    // Handle user cancellation or errors
-    if (req.query.error) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      console.log('OAuth error, redirecting to:', `${frontendUrl}?error=${req.query.error}`);
-      return res.redirect(`${frontendUrl}?error=${encodeURIComponent(req.query.error)}`);
-    }
-    
-    next();
-  },
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}?error=auth_failed`,
-    session: false 
-  }),
-  (req, res) => {
-    try {
-      console.log('=== OAuth Success ===');
-      console.log('User:', req.user.email || req.user.googleId);
-      
-      const token = generateToken(req.user._id);
-      
-      const userData = {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        displayName: req.user.displayName,
-        photo: req.user.photo,
-        role: req.user.role
-      };
-      
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      
-      // Detect if request is from mobile
-      const userAgent = req.headers['user-agent'] || '';
-      const isMobile = /android|iphone|ipad|mobile/i.test(userAgent);
-      
-      console.log('User Agent:', userAgent);
-      console.log('Is Mobile:', isMobile);
-      console.log('Redirecting to:', `${frontendUrl}/auth/callback`);
-      
-      // Build redirect URL with token and user data
-      const redirectUrl = `${frontendUrl}/auth/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}${isMobile ? '&mobile=true' : ''}`;
-      
-      res.redirect(redirectUrl);
-    } catch (error) {
-      console.error('OAuth callback error:', error);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      res.redirect(`${frontendUrl}?error=auth_processing_failed`);
-    }
-  }
-);
-
-// Token verification endpoint
-router.get('/verify', verifyToken, (req, res) => {
-  res.json({ 
-    success: true,
-    valid: true, 
-    user: {
-      id: req.user.id,
-      email: req.user.email,
-      name: req.user.name,
-      role: req.user.role
-    }
-  });
+// Rate limiting for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window
+  message: { success: false, message: 'Too many authentication attempts, please try again later.' }
 });
 
-// Protected routes
-router.get('/profile', verifyToken, getProfile);
-router.put('/profile', verifyToken, updateProfile);
+// DB guard middleware (local helper)
+const ensureDbConnected = (req, res, next) => {
+  // 1 = connected
+  if (mongoose.connection.readyState === 1) return next();
+  console.warn('[ensureDbConnected] Rejecting auth request - DB state:', mongoose.connection.readyState, req.method, req.path);
+  return res.status(503).json({ success: false, message: 'Service Unavailable - database not connected' });
+};
+
+// User Registration
+router.post('/register', authLimiter, ensureDbConnected, async (req, res) => {
+  try {
+    const { name, email, password, confirmPassword } = req.body;
+
+    // Validation
+    if (!name || !email || !password || !confirmPassword) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user already exists (use exec and handle DB errors)
+    let existingUser;
+    try {
+      existingUser = await User.findOne({ email: normalizedEmail }).exec();
+    } catch (dbErr) {
+      console.error('[AUTH] Registration DB error during findOne:', dbErr);
+      return res.status(503).json({ success: false, message: 'Service Unavailable - database error' });
+    }
+
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user (use create() which wraps save)
+    let user;
+    try {
+      user = await User.create({
+        name: name.trim(),
+        email: normalizedEmail,
+        password: hashedPassword,
+        role: 'user', // Default role
+        accountType: 'free'
+      });
+    } catch (createErr) {
+      console.error('[AUTH] Registration DB error during create:', createErr);
+      // handle common mongoose errors
+      if (createErr.name === 'ValidationError') {
+        const messages = Object.values(createErr.errors).map(e => e.message);
+        return res.status(400).json({ success: false, message: 'Validation failed', errors: messages });
+      }
+      if (createErr.code === 11000) {
+        return res.status(400).json({ success: false, message: 'Duplicate entry' });
+      }
+      return res.status(503).json({ success: false, message: 'Service Unavailable - database error' });
+    }
+
+    // Generate JWT token with user role
+    const token = generateToken(user._id, user.role);
+
+    console.log(`[AUTH] New user registered: ${user.email} (${user.role})`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accountType: user.accountType
+      }
+    });
+  } catch (error) {
+    console.error('[AUTH] Registration error:', error);
+    res.status(500).json({ success: false, message: 'Registration failed. Please try again.', error: error.message });
+  }
+});
+
+// User Login
+router.post('/login', authLimiter, ensureDbConnected, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Find user and select password explicitly (schema has select:false)
+    let user;
+    try {
+      user = await User.findOne({ email: normalizedEmail }).select('+password').exec();
+    } catch (dbErr) {
+      console.error('[AUTH] Login DB error during findOne:', dbErr);
+      return res.status(503).json({ success: false, message: 'Service Unavailable - database error' });
+    }
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    // Check password (ensure password exists)
+    if (!user.password) {
+      console.warn('[AUTH] Login - user has no password set:', user._id);
+      return res.status(400).json({ success: false, message: 'Account has no password. Use original auth method.' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    // Generate JWT token with user role
+    const token = generateToken(user._id, user.role);
+
+    console.log(`[AUTH] User logged in: ${user.email} (${user.role})`);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accountType: user.accountType,
+        photo: user.photo || user.picture
+      }
+    });
+  } catch (error) {
+    console.error('[AUTH] Login error:', error);
+    res.status(500).json({ success: false, message: 'Login failed. Please try again.', error: error.message });
+  }
+});
+
+// Verify Token (optional - for client-side verification)
+router.get('/verify', ensureDbConnected, async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+
+    const { verifyToken } = require('../utils/generateToken');
+    const decoded = verifyToken(token);
+    
+    let user;
+    try {
+      user = await User.findById(decoded.id).select('-password').exec();
+    } catch (dbErr) {
+      console.error('[AUTH] Verify DB error during findById:', dbErr);
+      return res.status(503).json({ success: false, message: 'Service Unavailable - database error' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accountType: user.accountType
+      }
+    });
+  } catch (error) {
+    console.error('[AUTH] Token verification error:', error);
+    res.status(401).json({ success: false, message: 'Invalid or expired token' });
+  }
+});
 
 module.exports = router;

@@ -20,9 +20,7 @@ class ErrorBoundary extends React.Component {
         <div style={{ padding: '40px', textAlign: 'center' }}>
           <h2>Something went wrong</h2>
           <p>We're sorry for the inconvenience. Please refresh the page.</p>
-          <button onClick={() => window.location.reload()}>
-            Refresh Page
-          </button>
+          <button onClick={() => window.location.reload()}>Refresh Page</button>
         </div>
       );
     }

@@ -40,15 +40,11 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
         <div className="nav-content">
           <div className="logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
             <div className="logo-icon">
-              <img
-                src={img2}
-                alt="Startup Bridge Logo"
-                className="navbar-logo"
-              />
+              <img src={img2} alt="Startup Bridge Logo" className="navbar-logo" />
             </div>
             <span className="logo-text">Startup Wing</span>
           </div>
-          
+
           <div className="nav-links desktop-nav">
             <a href="/">Home</a>
             <a href="/features">Features</a>
@@ -56,17 +52,28 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
             <a href="/Services">Services</a>
             {loggedInUser ? (
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <button 
-                  className="cta-button" 
-                  onClick={handleDashboardClick} 
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px' }}
+                <button
+                  className="cta-button"
+                  onClick={handleDashboardClick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 20px',
+                  }}
                 >
                   <User className="icon" size={18} />
                 </button>
-                <button 
-                  className="cta-button" 
-                  onClick={handleLogout} 
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', background: '#ef4444' }}
+                <button
+                  className="cta-button"
+                  onClick={handleLogout}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 20px',
+                    background: '#ef4444',
+                  }}
                 >
                   <LogOut className="icon" size={18} />
                 </button>
@@ -78,10 +85,7 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
             )}
           </div>
 
-          <button 
-            className="mobile-menu-btn"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
+          <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
@@ -91,32 +95,55 @@ const Navbar = ({ loggedInUser, onLogout, onOpenAuth }) => {
       {isMenuOpen && (
         <div className="mobile-menu">
           <div className="mobile-menu-content">
-            <a href="/" onClick={() => setIsMenuOpen(false)}>Home</a>
-            <a href="/features" onClick={() => setIsMenuOpen(false)}>Features</a>
-            <a href="/about" onClick={() => setIsMenuOpen(false)}>About</a>
-            <a href="/Services" onClick={() => setIsMenuOpen(false)}>Services</a>
+            <a href="/" onClick={() => setIsMenuOpen(false)}>
+              Home
+            </a>
+            <a href="/features" onClick={() => setIsMenuOpen(false)}>
+              Features
+            </a>
+            <a href="/about" onClick={() => setIsMenuOpen(false)}>
+              About
+            </a>
+            <a href="/Services" onClick={() => setIsMenuOpen(false)}>
+              Services
+            </a>
             {loggedInUser ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                <button 
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}
+              >
+                <button
                   className="cta-button mobile-user"
                   onClick={handleDashboardClick}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                  }}
                 >
                   <User className="icon" size={18} />
                 </button>
-                <button 
+                <button
                   className="cta-button mobile-user"
                   onClick={() => {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', background: '#ef4444' }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    background: '#ef4444',
+                  }}
                 >
                   <LogOut className="icon" size={18} />
                 </button>
               </div>
             ) : (
-              <button 
+              <button
                 className="cta-button mobile-user"
                 onClick={() => {
                   onOpenAuth();

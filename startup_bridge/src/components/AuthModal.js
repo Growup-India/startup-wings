@@ -1,9 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { X, Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth } from "../config/firebase";
-import "./css/authmodal.css";
+import React, { useState, useEffect } from 'react';
+import { X, Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { auth } from '../config/firebase';
+import './css/authmodal.css';
+
+// Helper function to decode JWT and extract role
+const decodeJWT = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    return null;
+  }
+};
 
 const AuthModal = ({ isOpen, onClose, onLogin }) => {
   const navigate = useNavigate();
@@ -12,19 +30,19 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    phoneNumber: "",
-    otp: "",
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phoneNumber: '',
+    otp: '',
   });
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   // Setup reCAPTCHA
   useEffect(() => {
@@ -33,23 +51,20 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
         try {
           window.recaptchaVerifier.clear();
         } catch (e) {
-          console.log('Error clearing recaptcha:', e);
+          // Silently handle recaptcha clear error
         }
       }
 
       try {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-          'callback': (response) => {
-            console.log('reCAPTCHA solved');
-          },
+          size: 'invisible',
+          callback: () => {},
           'expired-callback': () => {
-            console.log('reCAPTCHA expired');
             setError('reCAPTCHA expired. Please try again.');
-          }
+          },
         });
       } catch (e) {
-        console.error('Error initializing recaptcha:', e);
+        // Silently handle recaptcha initialization error
       }
     }
 
@@ -58,7 +73,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
         try {
           window.recaptchaVerifier.clear();
         } catch (e) {
-          console.log('Cleanup error:', e);
+          // Silently handle cleanup error
         }
       }
     };
@@ -69,8 +84,8 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    
+    setError('');
+
     if (!isMobileAuth && !isLogin && formData.password !== formData.confirmPassword) {
       setError("Passwords don't match!");
       setLoading(false);
@@ -80,109 +95,105 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
     try {
       if (isMobileAuth) {
         if (!otpSent) {
+          // Send OTP
           try {
             const appVerifier = window.recaptchaVerifier;
             const confirmation = await signInWithPhoneNumber(
-              auth, 
-              formData.phoneNumber, 
+              auth,
+              formData.phoneNumber,
               appVerifier
             );
-            
+
             setConfirmationResult(confirmation);
             setOtpSent(true);
-            console.log('OTP sent successfully via Firebase');
-            
             alert('OTP sent to your phone number successfully!');
 
             try {
               await fetch(`${API_BASE_URL}/api/otp/initiate`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phoneNumber: formData.phoneNumber }),
               });
             } catch (err) {
-              console.log('Backend initiate call failed, but OTP was sent:', err);
+              // Backend initiate call failed but OTP was sent
             }
-
           } catch (error) {
-            console.error('Firebase OTP error:', error);
-            
             if (error.code === 'auth/invalid-phone-number') {
               setError('Invalid phone number format. Use +91XXXXXXXXXX');
             } else if (error.code === 'auth/too-many-requests') {
               setError('Too many requests. Please try again later.');
-            } else if (error.code === 'auth/quota-exceeded') {
-              setError('SMS quota exceeded. Please try again later.');
-            } else if (error.code === 'auth/captcha-check-failed') {
-              setError('reCAPTCHA verification failed. Please try again.');
             } else {
               setError('Failed to send OTP. Please try again.');
             }
-            
+
             if (window.recaptchaVerifier) {
               try {
                 window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                  'size': 'invisible',
+                  size: 'invisible',
                 });
-              } catch (e) {
-                console.error('Error resetting recaptcha:', e);
-              }
+              } catch (e) {}
             }
           }
         } else {
+          // Verify OTP
           try {
             const result = await confirmationResult.confirm(formData.otp);
             const user = result.user;
-            
             const idToken = await user.getIdToken();
-            
+
             const response = await fetch(`${API_BASE_URL}/api/otp/verify`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 phoneNumber: formData.phoneNumber,
                 idToken: idToken,
-                name: formData.name
+                name: formData.name,
               }),
             });
 
             const data = await response.json();
 
             if (data.success) {
-              localStorage.setItem("token", data.token);
-              localStorage.setItem("user", JSON.stringify(data.user));
-              
-              alert(data.isNewUser 
-                ? `Welcome ${data.user.name}! Your account has been created.`
-                : `Welcome back, ${data.user.name}!`
+              // Store token in localStorage
+              localStorage.setItem('token', data.token);
+              localStorage.setItem('user', JSON.stringify(data.user));
+
+              // Decode JWT to get role
+              const decoded = decodeJWT(data.token);
+              const userRole = decoded?.role || data.user?.role || 'user';
+
+              alert(
+                data.isNewUser
+                  ? `Welcome ${data.user.name}! Your account has been created.`
+                  : `Welcome back, ${data.user.name}!`
               );
-              
+
               if (onLogin) {
                 onLogin(data.user);
               }
-              
+
               setFormData({
-                name: "",
-                email: "",
-                password: "",
-                confirmPassword: "",
-                phoneNumber: "",
-                otp: "",
+                name: '',
+                email: '',
+                password: '',
+                confirmPassword: '',
+                phoneNumber: '',
+                otp: '',
               });
-              
-              navigate('/dashboard');
+
               onClose();
+
+              // Navigate based on role
+              if (userRole === 'admin') {
+                navigate('/admin/dashboard');
+              } else {
+                navigate('/dashboard');
+              }
             } else {
-              setError(data.error || "Verification failed");
+              setError(data.error || 'Verification failed');
             }
           } catch (error) {
-            console.error('Firebase verification error:', error);
-            
             if (error.code === 'auth/invalid-verification-code') {
               setError('Invalid OTP. Please check and try again.');
             } else if (error.code === 'auth/code-expired') {
@@ -193,56 +204,67 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
           }
         }
       } else {
-        const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
-        const payload = isLogin 
+        // Email/Password Authentication
+        const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+        const payload = isLogin
           ? { email: formData.email, password: formData.password }
-          : { 
-              name: formData.name, 
-              email: formData.email, 
-              password: formData.password, 
-              confirmPassword: formData.confirmPassword
+          : {
+              name: formData.name,
+              email: formData.email,
+              password: formData.password,
+              confirmPassword: formData.confirmPassword,
             };
 
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
         const data = await response.json();
 
         if (data.success) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          
-          alert(isLogin 
-            ? `Welcome back, ${data.user.name}!` 
-            : `Account created successfully! Welcome, ${data.user.name}!`
+          // Store token in localStorage
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+
+          // Decode JWT to get role
+          const decoded = decodeJWT(data.token);
+          const userRole = decoded?.role || data.user?.role || 'user';
+
+          alert(
+            isLogin
+              ? `Welcome back, ${data.user.name}!`
+              : `Account created successfully! Welcome, ${data.user.name}!`
           );
-          
+
           setFormData({
-            name: "",
-            email: "",
-            password: "",
-            confirmPassword: "",
-            phoneNumber: "",
-            otp: "",
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            phoneNumber: '',
+            otp: '',
           });
-          
+
           if (onLogin) {
             onLogin(data.user);
           }
-          
+
           onClose();
+
+          // Navigate based on role
+          if (userRole === 'admin') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/dashboard');
+          }
         } else {
-          setError(data.error || data.message || "Something went wrong. Please try again.");
+          setError(data.error || data.message || 'Something went wrong. Please try again.');
         }
       }
     } catch (error) {
-      console.error("Auth error:", error);
-      setError("Network error. Please check your connection and try again.");
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -253,67 +275,57 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
       ...prev,
       [e.target.name]: e.target.value,
     }));
-    
-    if (error) setError("");
+
+    if (error) setError('');
   };
 
   const toggleAuthMode = () => {
     setIsLogin(!isLogin);
-    setError("");
+    setError('');
     setOtpSent(false);
     setIsMobileAuth(false);
     setConfirmationResult(null);
     setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      phoneNumber: "",
-      otp: "",
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phoneNumber: '',
+      otp: '',
     });
   };
 
-  // FIXED: Google Auth handler with proper URL
   const handleGoogleAuth = () => {
-    console.log('Initiating Google OAuth...');
-    // FIXED: Use full backend URL
     const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     window.location.href = `${backendUrl}/auth/google`;
   };
 
   const handleResendOTP = async () => {
     setLoading(true);
-    setError("");
+    setError('');
     setOtpSent(false);
     setConfirmationResult(null);
-    setFormData(prev => ({ ...prev, otp: "" }));
+    setFormData((prev) => ({ ...prev, otp: '' }));
 
     try {
       if (window.recaptchaVerifier) {
         try {
           window.recaptchaVerifier.clear();
-        } catch (e) {
-          console.log('Error clearing recaptcha:', e);
-        }
+        } catch (e) {}
       }
-      
+
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
+        size: 'invisible',
       });
 
       const appVerifier = window.recaptchaVerifier;
-      const confirmation = await signInWithPhoneNumber(
-        auth, 
-        formData.phoneNumber, 
-        appVerifier
-      );
-      
+      const confirmation = await signInWithPhoneNumber(auth, formData.phoneNumber, appVerifier);
+
       setConfirmationResult(confirmation);
       setOtpSent(true);
       alert(`OTP resent to ${formData.phoneNumber}`);
     } catch (error) {
-      console.error("Resend OTP error:", error);
-      setError("Failed to resend OTP. Please try again.");
+      setError('Failed to resend OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -322,38 +334,40 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
   const handleBackToPhone = () => {
     setOtpSent(false);
     setConfirmationResult(null);
-    setFormData(prev => ({ ...prev, otp: "" }));
-    setError("");
+    setFormData((prev) => ({ ...prev, otp: '' }));
+    setError('');
   };
 
   const handleBackToEmail = () => {
     setIsMobileAuth(false);
     setOtpSent(false);
     setConfirmationResult(null);
-    setError("");
+    setError('');
     setFormData({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      phoneNumber: "",
-      otp: "",
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phoneNumber: '',
+      otp: '',
     });
   };
 
   return (
     <div className="auth-overlay">
       <div className="auth-backdrop" onClick={onClose}></div>
-
       <div id="recaptcha-container"></div>
 
       <div className="auth-card">
         <div className="auth-header">
           <h2>
-            {isMobileAuth 
-              ? (otpSent ? "Verify OTP" : "Mobile Login")
-              : (isLogin ? "Welcome back" : "Create account")
-            }
+            {isMobileAuth
+              ? otpSent
+                ? 'Verify OTP'
+                : 'Mobile Login'
+              : isLogin
+                ? 'Welcome back'
+                : 'Create account'}
           </h2>
           <button className="close-btn" onClick={onClose} disabled={loading}>
             <X size={18} />
@@ -361,20 +375,15 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
         </div>
         <p className="auth-description">
           {isMobileAuth
-            ? (otpSent 
-                ? `Enter the OTP sent to ${formData.phoneNumber}`
-                : "Enter your mobile number to continue")
-            : (isLogin
-                ? "Sign in to your account to continue"
-                : "Get started with your startup journey")
-          }
+            ? otpSent
+              ? `Enter the OTP sent to ${formData.phoneNumber}`
+              : 'Enter your mobile number to continue'
+            : isLogin
+              ? 'Sign in to your account to continue'
+              : 'Get started with your startup journey'}
         </p>
 
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           {isMobileAuth ? (
@@ -419,12 +428,8 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                     </small>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className={`auth-btn ${loading ? 'loading' : ''}`}
-                    disabled={loading}
-                  >
-                    {loading ? "Sending OTP..." : "Send OTP"}
+                  <button type="submit" className={`auth-btn ${loading ? 'loading' : ''}`} disabled={loading}>
+                    {loading ? 'Sending OTP...' : 'Send OTP'}
                   </button>
 
                   <button
@@ -441,7 +446,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                       cursor: 'pointer',
                       fontSize: '14px',
                       fontWeight: '500',
-                      width: '100%'
+                      width: '100%',
                     }}
                   >
                     Back to Email Login
@@ -469,19 +474,11 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                     </div>
                   </div>
 
-                  <button 
-                    type="submit" 
-                    className={`auth-btn ${loading ? 'loading' : ''}`}
-                    disabled={loading}
-                  >
-                    {loading ? "Verifying..." : "Verify OTP"}
+                  <button type="submit" className={`auth-btn ${loading ? 'loading' : ''}`} disabled={loading}>
+                    {loading ? 'Verifying...' : 'Verify OTP'}
                   </button>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: '10px', 
-                    marginTop: '10px' 
-                  }}>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                     <button
                       type="button"
                       onClick={handleResendOTP}
@@ -495,7 +492,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                         borderRadius: '8px',
                         cursor: 'pointer',
                         fontSize: '14px',
-                        fontWeight: '500'
+                        fontWeight: '500',
                       }}
                     >
                       Resend OTP
@@ -514,7 +511,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                         borderRadius: '8px',
                         cursor: 'pointer',
                         fontSize: '14px',
-                        fontWeight: '500'
+                        fontWeight: '500',
                       }}
                     >
                       Change Number
@@ -568,7 +565,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                   <input
                     id="password"
                     name="password"
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
@@ -595,7 +592,7 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                     <input
                       id="confirmPassword"
                       name="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
+                      type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
@@ -615,15 +612,8 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
                 </div>
               )}
 
-              <button 
-                type="submit" 
-                className={`auth-btn ${loading ? 'loading' : ''}`}
-                disabled={loading}
-              >
-                {loading 
-                  ? (isLogin ? "Signing In..." : "Creating Account...") 
-                  : (isLogin ? "Sign In" : "Create Account")
-                }
+              <button type="submit" className={`auth-btn ${loading ? 'loading' : ''}`} disabled={loading}>
+                {loading ? (isLogin ? 'Signing In...' : 'Creating Account...') : isLogin ? 'Sign In' : 'Create Account'}
               </button>
             </>
           )}
@@ -636,17 +626,24 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
             </div>
 
             <div className="auth-alternatives">
-              <button 
-                type="button" 
-                className="alt-auth-btn"
-                disabled={loading}
-                onClick={handleGoogleAuth}
-              >
+              <button type="button" className="alt-auth-btn" disabled={loading} onClick={handleGoogleAuth}>
                 <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  />
                 </svg>
                 Continue with Google
               </button>
@@ -654,13 +651,9 @@ const AuthModal = ({ isOpen, onClose, onLogin }) => {
 
             <div className="auth-toggle">
               <p>
-                {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-                <button 
-                  type="button" 
-                  onClick={toggleAuthMode}
-                  disabled={loading}
-                >
-                  {isLogin ? "Sign up" : "Sign in"}
+                {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+                <button type="button" onClick={toggleAuthMode} disabled={loading}>
+                  {isLogin ? 'Sign up' : 'Sign in'}
                 </button>
               </p>
             </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { ArrowRight, X } from 'lucide-react';
-import './css/services.css';
-import AuthModal from './AuthModal';
-import Navbar from './Navbar';
-import Footer from './Footer';
+import { ArrowRight, X } from "lucide-react";
+import "./css/services.css";
+import AuthModal from "./AuthModal";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import servicesBanner from "./img/services-banner.jpg"; // <-- add this import
 
 const services = [
   {
@@ -97,12 +98,12 @@ export default function Services({ onLogin, user, onLogout }) {
   // Check for logged in user on component mount
   useEffect(() => {
     if (!user) {
-      const savedUser = localStorage.getItem('user');
+      const savedUser = localStorage.getItem("user");
       if (savedUser) {
         try {
           setLoggedInUser(JSON.parse(savedUser));
         } catch (error) {
-          console.error('Error parsing saved user:', error);
+          console.error("Error parsing saved user:", error);
         }
       }
     } else {
@@ -119,9 +120,9 @@ export default function Services({ onLogin, user, onLogout }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('startupProfile');
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("startupProfile");
     setLoggedInUser(null);
     if (onLogout) {
       onLogout();
@@ -131,20 +132,33 @@ export default function Services({ onLogin, user, onLogout }) {
   return (
     <div className="services-page">
       {/* Navigation */}
-      <Navbar 
+      <Navbar
         loggedInUser={loggedInUser}
         onLogout={handleLogout}
         onOpenAuth={() => setIsAuthOpen(true)}
       />
 
+      {/* Banner Section */}
+      <div className="services-banner">
+        <img src={servicesBanner} alt="Our Services" />
+        <div className="services-banner-overlay">
+          <h1>Our Services</h1>
+          <p>
+            {" "}
+            End-to-end support for founders — from company setup to growth,
+            funding, and mentorship
+          </p>
+        </div>
+      </div>
+
       {/* Services Hero Banner */}
       <div className="services-hero">
         <div className="container">
-          <h1>Our Services</h1>
-          <p>
+          {/* <h1>Our Services</h1> */}
+          {/* <p>
             End-to-end support for founders — from company setup to growth,
             funding, and mentorship.
-          </p>
+          </p> */}
         </div>
       </div>
 
@@ -163,7 +177,7 @@ export default function Services({ onLogin, user, onLogout }) {
               <p>{service.short}</p>
               <div className="explore-btn">
                 Explore Service
-                <ArrowRight size={16} style={{ marginLeft: '8px' }} />
+                <ArrowRight size={16} style={{ marginLeft: "8px" }} />
               </div>
             </div>
           ))}
@@ -198,7 +212,7 @@ export default function Services({ onLogin, user, onLogout }) {
               <div className="modal-actions">
                 <a href="/contact" className="btn-small">
                   Contact Us
-                  <ArrowRight size={16} style={{ marginLeft: '8px' }} />
+                  <ArrowRight size={16} style={{ marginLeft: "8px" }} />
                 </a>
               </div>
             </div>
@@ -210,9 +224,9 @@ export default function Services({ onLogin, user, onLogout }) {
       <Footer />
 
       {/* Auth Modal */}
-      <AuthModal 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
         onLogin={onLogin}
       />
     </div>

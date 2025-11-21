@@ -1,17 +1,41 @@
+// controllers/authController.js
+const mongoose = require('mongoose');
 const User = require('../models/user');
 const { generateToken } = require('../utils/generateToken');
+
+/**
+ * Helper: respond 503 if DB not connected.
+ * readyState: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+ */
+const ensureDb = (res) => {
+  return res.status(503).json({
+    success: false,
+    error: 'Service Unavailable - database not connected'
+  });
+};
 
 // Register new user with email/password
 const register = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) return ensureDb(res);
+
     const { name, email, password } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ success: false, error: 'Name, email and password are required' });
+    }
 
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if user already exists with this email
-    const existingUser = await User.findOne({ email: normalizedEmail });
-    
+    // Check if user already exists with this email (use exec)
+    let existingUser;
+    try {
+      existingUser = await User.findOne({ email: normalizedEmail }).exec();
+    } catch (dbErr) {
+      console.error('[AUTH] Register DB error during findOne:', dbErr);
+      return ensureDb(res);
+    }
+
     if (existingUser) {
       // Check if user registered with different auth method
       if (existingUser.authProvider === 'google') {
@@ -49,7 +73,29 @@ const register = async (req, res) => {
       isEmailVerified: false
     });
 
-    await user.save();
+    try {
+      await user.save();
+    } catch (saveErr) {
+      console.error('[AUTH] Register DB error during save:', saveErr);
+      // handle validation or duplicate errors below
+      if (saveErr.name === 'ValidationError') {
+        const messages = Object.values(saveErr.errors).map(err => err.message);
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          messages
+        });
+      }
+      if (saveErr.code === 11000) {
+        const field = Object.keys(saveErr.keyValue)[0];
+        return res.status(400).json({
+          success: false,
+          error: 'Duplicate entry',
+          message: `${field === 'email' ? 'Email' : field} already exists`
+        });
+      }
+      return ensureDb(res);
+    }
 
     // Generate token
     const token = generateToken(user._id);
@@ -64,27 +110,6 @@ const register = async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
-    
-    // Handle mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        success: false,
-        error: 'Validation failed',
-        messages
-      });
-    }
-
-    // Handle duplicate key error (shouldn't happen due to check above, but just in case)
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyValue)[0];
-      return res.status(400).json({
-        success: false,
-        error: 'Duplicate entry',
-        message: `${field === 'email' ? 'Email' : field} already exists`
-      });
-    }
-
     res.status(500).json({
       success: false,
       error: 'Server error',
@@ -96,13 +121,24 @@ const register = async (req, res) => {
 // Login user with email/password
 const login = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) return ensureDb(res);
+
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
 
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
     // Find user by email and include password field
-    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+    let user;
+    try {
+      user = await User.findOne({ email: normalizedEmail }).select('+password').exec();
+    } catch (dbErr) {
+      console.error('[AUTH] Login DB error during findOne:', dbErr);
+      return ensureDb(res);
+    }
 
     if (!user) {
       return res.status(401).json({
@@ -150,7 +186,13 @@ const login = async (req, res) => {
     }
 
     // Compare password using the model method
-    const isPasswordValid = await user.comparePassword(password);
+    let isPasswordValid;
+    try {
+      isPasswordValid = await user.comparePassword(password);
+    } catch (cmpErr) {
+      console.error('[AUTH] Password compare error:', cmpErr);
+      return res.status(500).json({ success: false, error: 'Server error' });
+    }
     
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -162,7 +204,12 @@ const login = async (req, res) => {
 
     // Update last login
     user.lastLogin = new Date();
-    await user.save();
+    try {
+      await user.save();
+    } catch (saveErr) {
+      console.error('[AUTH] Login DB error during save:', saveErr);
+      // don't fail login due to non-critical save error; log and continue
+    }
 
     // Generate token
     const token = generateToken(user._id);
@@ -188,6 +235,8 @@ const login = async (req, res) => {
 // Google OAuth Mobile endpoint
 const googleAuthMobile = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) return ensureDb(res);
+
     const { idToken, email, name, photo, googleId } = req.body;
 
     if (!email || !googleId) {
@@ -200,36 +249,34 @@ const googleAuthMobile = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Find or create user
-    let user = await User.findOne({ 
-      $or: [
-        { email: normalizedEmail },
-        { googleId }
-      ]
-    });
+    // Find or create user (use exec)
+    let user;
+    try {
+      user = await User.findOne({ 
+        $or: [
+          { email: normalizedEmail },
+          { googleId }
+        ]
+      }).exec();
+    } catch (dbErr) {
+      console.error('[AUTH] Google mobile DB error during findOne:', dbErr);
+      return ensureDb(res);
+    }
 
     if (user) {
       // Update existing user
-      if (!user.googleId && googleId) {
-        user.googleId = googleId;
-      }
-      
-      if (photo && !user.photo) {
-        user.photo = photo;
-      }
-      
-      if (!user.displayName && name) {
-        user.displayName = name;
-      }
-      
-      // Update auth provider if user was registered with email/password
-      if (user.authProvider === 'local' && user.googleId) {
-        user.authProvider = 'google';
-      }
-      
+      if (!user.googleId && googleId) user.googleId = googleId;
+      if (photo && !user.photo) user.photo = photo;
+      if (!user.displayName && name) user.displayName = name;
+      if (user.authProvider === 'local' && user.googleId) user.authProvider = 'google';
       user.isEmailVerified = true;
       user.lastLogin = new Date();
-      await user.save();
+      try {
+        await user.save();
+      } catch (saveErr) {
+        console.error('[AUTH] Google mobile DB error during save:', saveErr);
+        // continue - don't fail auth solely due to save error
+      }
     } else {
       // Create new user
       user = new User({
@@ -243,7 +290,19 @@ const googleAuthMobile = async (req, res) => {
         isEmailVerified: true,
         lastLogin: new Date()
       });
-      await user.save();
+      try {
+        await user.save();
+      } catch (createErr) {
+        console.error('[AUTH] Google mobile DB error during create:', createErr);
+        if (createErr.code === 11000) {
+          return res.status(400).json({
+            success: false,
+            error: 'Account conflict',
+            message: 'An account with this email or Google ID already exists'
+          });
+        }
+        return ensureDb(res);
+      }
     }
 
     // Generate token
@@ -258,15 +317,6 @@ const googleAuthMobile = async (req, res) => {
 
   } catch (error) {
     console.error('Google mobile auth error:', error);
-    
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        error: 'Account conflict',
-        message: 'An account with this email or Google ID already exists'
-      });
-    }
-    
     res.status(500).json({
       success: false,
       error: 'Authentication failed',
@@ -278,7 +328,15 @@ const googleAuthMobile = async (req, res) => {
 // Get user profile
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    if (mongoose.connection.readyState !== 1) return ensureDb(res);
+
+    let user;
+    try {
+      user = await User.findById(req.user.id).exec();
+    } catch (dbErr) {
+      console.error('[PROFILE] DB error during findById:', dbErr);
+      return ensureDb(res);
+    }
     
     if (!user) {
       return res.status(404).json({
@@ -310,6 +368,8 @@ const getProfile = async (req, res) => {
 // Update user profile
 const updateProfile = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) return ensureDb(res);
+
     const { name, displayName, bio, photo } = req.body;
     
     const updateData = {};
@@ -318,11 +378,17 @@ const updateProfile = async (req, res) => {
     if (bio !== undefined) updateData.bio = bio.trim();
     if (photo !== undefined) updateData.photo = photo;
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    let user;
+    try {
+      user = await User.findByIdAndUpdate(
+        req.user.id,
+        updateData,
+        { new: true, runValidators: true }
+      ).exec();
+    } catch (dbErr) {
+      console.error('[PROFILE] DB error during findByIdAndUpdate:', dbErr);
+      return ensureDb(res);
+    }
 
     if (!user) {
       return res.status(404).json({
