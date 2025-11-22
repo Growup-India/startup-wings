@@ -1,0 +1,88 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    name: Deploy MERN App to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+      
+      - name: Test SSH Connectivity
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo Connected Successfully"
+
+      
+      - name: Copy Files to EC2
+        run: |
+          rsync -az -e "ssh -o StrictHostKeyChecking=no -i private_key.pem" \
+          --exclude="node_modules" \
+          --exclude=".git" \
+          ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app
+
+      
+      - name: Run Deployment on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            
+            cd /home/${{ secrets.EC2_USER }}/app
+
+            echo '-----------------------------------'
+            echo 'Stopping Existing Containers'
+            echo '-----------------------------------'
+            docker-compose down || true
+
+            echo 'Creating Backup of Old Images'
+            mkdir -p rollback
+
+            docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'frontend|backend' | xargs -I {} docker save {} -o rollback/{}.tar || true
+
+            echo '-----------------------------------'
+            echo 'Building New Containers'
+            echo '-----------------------------------'
+            if docker-compose build; then
+              echo 'Build Success'
+            else
+              echo 'Build Failed - Restoring Backup Images'
+              
+              for img in rollback/*.tar; do
+                docker load -i \$img
+              done
+
+              exit 1
+            fi
+
+            echo '-----------------------------------'
+            echo 'Starting Containers'
+            echo '-----------------------------------'
+            if docker-compose up -d; then
+              echo 'Deployment Completed Successfully!'
+            else
+              echo 'Startup Failed - Rolling Back...'
+
+              docker-compose down || true
+
+              for img in rollback/*.tar; do
+                docker load -i \$img
+              done
+
+              docker-compose up -d || true
+
+              echo 'Rollback Completed'
+              exit 1
+            fi
+          "
