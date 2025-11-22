@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  frontend:
+    build: ./startup_bridge
+    container_name: frontend-app
+    restart: always
+    expose:
+      - "80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`staging.local`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+    networks:
+      - web
+
+  backend:
+    build: ./Back-end
+    container_name: backend-app
+    restart: always
+    env_file:
+      - .env
+    expose:
+      - "5000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`staging.local`) && PathPrefix(`/api`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=5000"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
